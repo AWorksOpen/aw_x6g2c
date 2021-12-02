@@ -1,0 +1,19 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+import os
+
+all_lib_files = [];
+
+lib_files = SConscript('bsp/imx6ul/SConscript')
+
+if None != lib_files:
+    all_lib_files += lib_files;
+lib_files = SConscript('cpu/imx6ul/SConscript')
+if None != lib_files:
+    all_lib_files += lib_files;
+
+# 返回所有的lib文件
+if 0 == len(all_lib_files):
+    all_lib_files = None;
+Return('all_lib_files');

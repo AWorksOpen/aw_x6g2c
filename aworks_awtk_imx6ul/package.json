@@ -1,0 +1,14 @@
+{
+  "name": "aworks_awtk_imx6ul", 
+  "version": "1.0.0", 
+  "category": "package", 
+  "build_ref": "56b21b713fff66c9412b0d3f93615ef9c6f54acd", 
+  "build_id": "81062", 
+  "repository": "http://192.168.23.62/aworks-team/aworks_awtk_imx6ul", 
+  "engines": [
+    "axio-engine@1.1.0-a.79", 
+    "axbuilder.custom@1.2.3", 
+    "package_manager.package@1.1.0"
+  ], 
+  "status": "stable"
+}

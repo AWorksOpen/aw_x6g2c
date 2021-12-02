@@ -1,0 +1,25 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+from config_build_common import build_common_config 
+
+env = DefaultEnvironment();
+
+#代码
+SOURCE = []
+SOURCE.append('aw_bsp_assert.c')
+SOURCE.append('aw_bsp_mem.c')
+SOURCE.append('sys_lib.c')
+
+# 添加针对不同编译器所写的代码
+COMPILER_DIR_STRING = build_common_config.AW_COMPILER_TOOLS + '/';
+SOURCE.append(Glob(COMPILER_DIR_STRING+'*.c'));
+SOURCE.append(Glob(COMPILER_DIR_STRING+'*.S'));
+SOURCE.append(Glob(COMPILER_DIR_STRING+'*.s'));
+
+INCLUDE = list(build_common_config.AW_COMMON_INCLUDE)
+
+lib_file=StaticLibrary('aw_bsp',SOURCE,CPPPATH = INCLUDE )
+
+Return('lib_file');
+

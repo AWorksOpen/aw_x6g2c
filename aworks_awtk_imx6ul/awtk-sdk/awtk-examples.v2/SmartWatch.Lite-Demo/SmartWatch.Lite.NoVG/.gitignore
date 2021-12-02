@@ -1,0 +1,14 @@
+/.sconsign.dblite
+
+/.vscode
+/src/*.obj
+/src/*/*.obj
+/src/*/*/*.obj
+/tool/*/*.obj
+/tool/*/*/*.obj
+/tool/*/*/*/*.obj
+/scripts/*.pyc
+/bin/*.ilk
+/bin/*.pdb
+/bin/*.lib
+/bin/*.exp

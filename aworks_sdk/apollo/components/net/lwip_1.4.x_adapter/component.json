@@ -1,0 +1,27 @@
+{
+  "name": "aw_lwip_14x_adapter", 
+  "version": "1.0.8", 
+  "description": "LWIP 1.4.x", 
+  "category": "component", 
+  "dependencies": {
+    "lwip_14x": {}, 
+    "aw_net_core": {}
+  }, 
+  "distype": "sdist", 
+  "build_ref": "6f2cf1de4147e3985f5330993be755a44cbef1de", 
+  "build_id": "76915", 
+  "repository": "http://192.168.23.62/aworks-team/aw_lwip_14x_adapter", 
+  "engines": [
+    "axio-engine@1.1.0-a.78", 
+    "axbuilder.component@1.0.0", 
+    "package_manager.component@1.0.0"
+  ], 
+  "status": "stable", 
+  "topic": "System::Internet::TCPIP", 
+  "autoconf": "aw_lwip_14x_adapter_autoconf.h", 
+  "include_dirs": [
+    "include", 
+    "include/arch", 
+    "include/ppp"
+  ]
+}

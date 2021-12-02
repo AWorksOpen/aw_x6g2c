@@ -1,0 +1,145 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+import os
+from config_build_common import     build_common_config 
+from config_lwip import             aw_lwip_config
+import config_sdk_version
+
+
+env = DefaultEnvironment();
+env = env.Clone();
+
+cur_build_path = Dir('.',False)
+org_build_path = str(cur_build_path.srcnode())
+
+output_ffconf_file = os.path.join(build_common_config.PROJECT_CONFIG_ROOT,'imx6ul_sdk_version.h')
+
+# 首先尝试生成版本信息文件
+TARGET = output_ffconf_file
+config_py_file = config_sdk_version.__file__
+(file_name,ext_name) = os.path.splitext(config_py_file)
+if ext_name == '.pyc':
+    config_py_file = file_name + '.py'
+
+SOURCE = [os.path.join(org_build_path ,'imx6ul_sdk_version.h.pyconfig') ]
+SOURCE.append(os.path.join(org_build_path ,'imx6ul_sdk_version.defconf') )
+SOURCE.append(config_py_file)
+SOURCE.append(config_sdk_version.get_changelog_path())
+env.configure_file(TARGET,SOURCE)
+
+
+#代码
+SOURCE = []
+
+#SOURCE.append('source/aw_atomic.c')
+SOURCE.append('source/aw_sdk_version.c')
+SOURCE.append('source/imx_clk_busy.c')
+SOURCE.append('source/imx_clk_enet_tx_clk_ref.c')
+SOURCE.append('source/imx_clk_gate2.c')
+SOURCE.append('source/imx_clk_pfd.c')
+SOURCE.append('source/imx_clk_pllv3.c')
+SOURCE.append('source/imx6ul_clock.c')
+SOURCE.append('source/imx6ul_iomuxc_regs.c')
+SOURCE.append('source/imx6ul_power.c')
+SOURCE.append('source/imx6ul_sound_wav.c')
+SOURCE.append('source/imx6ul_sys_timer.c')
+SOURCE.append('source/imx6ul_cpu_idle.S')
+SOURCE.append('source/stream.c')
+
+SOURCE.append('source/driver/adc/awbl_imx6ul_adc.c');
+SOURCE.append('source/driver/busctlr/awbl_imx6ul_gpmi.c');
+SOURCE.append('source/driver/nand/awbl_imx6ul_nand.c');
+SOURCE.append('source/driver/caam/awbl_imx6ul_caam.c');
+SOURCE.append('source/driver/caam/aw_imx6ul_caam.c');
+SOURCE.append('source/driver/caam/caam_ctrl.c');
+SOURCE.append('source/driver/caam/caam_func.c');
+SOURCE.append('source/driver/caam/caam_jr.c');
+SOURCE.append('source/driver/caam/caam_sm_store.c');
+SOURCE.append('source/driver/can/awbl_imx6ul_can.c');
+SOURCE.append('source/driver/display/awbl_mxs_fb.c');
+SOURCE.append('source/driver/display/awbl_mxs_tft_panel.c');
+SOURCE.append('source/driver/display/awbl_mxs_lcdif.c');
+SOURCE.append('source/driver/display/awbl_mxs_method.c');
+SOURCE.append('source/driver/dma/awbl_imx6ul_dma.c');
+SOURCE.append('source/driver/dma/awbl_imx6ul_sdma.c');
+SOURCE.append('source/driver/dma/awbl_imx6ul_sdma_service.c');
+SOURCE.append('source/driver/dma/aw_imx6ul_sdma_fw.c');
+SOURCE.append('source/driver/gpio/awbl_imx6ul_gpio.c');
+SOURCE.append('source/driver/gpio/imx6ul_pin_cfg_map.c');
+SOURCE.append('source/driver/i2c/awbl_imx6ul_i2c.c');
+SOURCE.append('source/driver/input/touchscreen/awbl_imx6ul_ts.c');
+SOURCE.append('source/driver/input/touchscreen/awbl_touch_calibrate_nvram.c');
+SOURCE.append('source/driver/intctlr/awbl_imx6ul_intc.c');
+SOURCE.append('source/driver/intctlr/gic.c');
+SOURCE.append('source/driver/intctlr/interrupt.c');
+SOURCE.append('source/driver/mqs/awbl_imx6ul_mqs.c');
+SOURCE.append('source/driver/net/awbl_imx6ul_enet.c');
+SOURCE.append('source/driver/nvram/awbl_imx6ul_ocotp.c');
+SOURCE.append('source/driver/pwm/awbl_imx6ul_pwm.c');
+SOURCE.append('source/driver/sai/awbl_imx6ul_sai.c');
+SOURCE.append('source/driver/sdio/awbl_imx6ul_sdio.c');
+SOURCE.append('source/driver/serial/awbl_imx6ul_uart.c');
+SOURCE.append('source/driver/sim/awbl_imx6ul_sim.c');
+SOURCE.append('source/driver/sim/awbl_sim.c');
+SOURCE.append('source/driver/spi/awbl_imx6ul_ecspi.c');
+SOURCE.append('source/driver/spi/awbl_imx6ul_qspi.c');
+SOURCE.append('source/driver/tempmon/awbl_imx6ul_tempmon.c');
+SOURCE.append('source/driver/timer/awbl_imx6ul_gptimer.c');
+SOURCE.append('source/driver/timer/awbl_imx6ul_timer.c');
+SOURCE.append('source/driver/usb/awbl_imx6ul_usbd.c');
+SOURCE.append('source/driver/usb/awbl_imx6ul_usbh.c');
+SOURCE.append('source/driver/wdt/awbl_imx6ul_wdt.c');
+SOURCE.append('source/driver/camera/awbl_imx6ul_csi.c');
+SOURCE.append('source/driver/eim/awbl_imx6ul_eim.c');
+SOURCE.append('source/driver/timestamp/awbl_imx6ul_timestamp.c');
+SOURCE.append('source/driver/timestamp/cortexa7_pmccntr.S');
+
+SOURCE.append('source/emwin536_adapter/source/GUI_X.c');
+SOURCE.append('source/emwin536_adapter/source/GUIConf.c');
+SOURCE.append('source/emwin536_adapter/source/LCDConf.c');
+SOURCE.append('source/emwin536_adapter/source/SIMConf.c');
+
+INCLUDE = list(build_common_config.AW_COMMON_INCLUDE)
+INCLUDE.append('include_notinsdk');
+INCLUDE.append(os.path.join(build_common_config.AWORKS_ROOT,'components/clock/include') );
+INCLUDE.append(os.path.join(build_common_config.AWORKS_ROOT,'components/base/include') );
+INCLUDE.append(os.path.join(build_common_config.AWORKS_ROOT,'components/gui/emwin5xx_adapter/include') );
+INCLUDE.append(aw_lwip_config.LWIP_INCLUDE);
+#INCLUDE.append(os.path.join(build_common_config.AWORKS_ROOT,'components/usb/include') );
+INCLUDE.append(os.path.join(build_common_config.AWORKS_ROOT,'components/usb/usb_v2/include') );
+INCLUDE.append(os.path.join(build_common_config.AWORKS_ROOT,'components/usb/usb_v2/common') );
+INCLUDE.append(os.path.join(build_common_config.AWORKS_ROOT,'components/usb/usb_v2/config') );
+INCLUDE.append(os.path.join(build_common_config.AWORKS_ROOT,'components/usb/usb_v2/utils') );
+INCLUDE.append(os.path.join(build_common_config.AWORKS_ROOT,'components/usb/usb_v2/adapter') );
+INCLUDE.append(os.path.join(build_common_config.AWORKS_ROOT,'components/usb/usb_v2/adapter/external/include') );
+#INCLUDE.append(os.path.join(build_common_config.AWORKS_ROOT,'components/usb/usb_v2/adapter/external/config') );
+#INCLUDE.append(os.path.join(build_common_config.AWORKS_ROOT,'components/usb/usb_v2/adapter/external/shell') );
+
+INCLUDE.append(os.path.join(build_common_config.AWORKS_ROOT,'3rdparty/gui/ucGUI5_28/include') );
+
+#net
+INCLUDE.append(build_common_config.AWORKS_ROOT + 'components/net/core/include')
+INCLUDE.append(build_common_config.AWORKS_ROOT + 'components/net/dhcp_server/include')
+INCLUDE.append(build_common_config.AWORKS_ROOT + 'components/net/ping/include')
+
+CPPDEFINES= env['CPPDEFINES'];
+
+lib_file=env.StaticLibrary('aw_cpu',SOURCE,CPPPATH = INCLUDE ,CPPDEFINES=CPPDEFINES);
+Install(build_common_config.AW_SDK_INSTALL_PATH + '/include/cpu',TARGET)
+
+cur_build_path = Dir('.',False);
+org_build_path = str(cur_build_path.srcnode())
+
+# 如果存在libstackoverflowcheck的源码，则执行其编译脚本
+overflow_check_source_path = os.path.join(org_build_path,'libstackoverflowcheck/awbl_stack_overflow.c');
+if os.path.isfile(overflow_check_source_path) :
+    SConscript_file_path = 'libstackoverflowcheck/SConscript';
+    overflow_lib_file = SConscript(SConscript_file_path);
+else :
+    overflow_lib_file_name = env['LIBPREFIX'] + 'awbl_stack_overflow' + env['LIBSUFFIX']
+    overflow_lib_file_path = os.path.join(build_common_config.BUILT_LIBS_SEARCH_PATH,overflow_lib_file_name);
+    overflow_lib_file = [File(overflow_lib_file_path)];
+
+lib_file.extend(overflow_lib_file);
+Return('lib_file');

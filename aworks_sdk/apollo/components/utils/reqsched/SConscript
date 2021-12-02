@@ -1,0 +1,31 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+import os
+from config_build_common import build_common_config
+from config_aw_base import aw_base_config
+from config_compoents import compoents_config
+
+NAME = 'reqsched'
+
+COMPILE_DEFINES = build_common_config.AW_CPPDEFINES
+
+env = DefaultEnvironment()
+
+cur_build_path = Dir('.', False)
+org_build_path = str(cur_build_path.srcnode())
+
+# 代码
+SOURCE = [
+    'src/reqsched.c',
+    'src/reqsched_os.c'
+]
+
+# 添加头文件路径
+INCLUDE = list(build_common_config.AW_COMMON_INCLUDE)
+INCLUDE.append(build_common_config.AWORKS_ROOT + 'components/base/include')
+INCLUDE.append(build_common_config.AWORKS_ROOT + 'components/utils/reqsched/src')
+
+lib_file = Library(NAME, SOURCE, CPPPATH=INCLUDE)
+
+Return('lib_file')

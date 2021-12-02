@@ -1,0 +1,7 @@
+{
+    "version": "1.0.2+sha.91d9f64",
+    "frameworks": [
+        "awtk@>=1.5"
+    ],
+    "name": "awtk-widget-generator"
+}

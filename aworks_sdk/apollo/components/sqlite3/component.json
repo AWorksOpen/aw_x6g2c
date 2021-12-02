@@ -1,0 +1,23 @@
+{
+  "name": "aw_sqlite3_adapter", 
+  "version": "1.0.3", 
+  "description": "SQlite3", 
+  "category": "component", 
+  "dependencies": {
+    "sqlite3": {}
+  }, 
+  "distype": "sdist", 
+  "build_ref": "07104f1c238efcaad2f5f99769966fa3157713af", 
+  "build_id": "74761", 
+  "repository": "http://192.168.23.62/aworks-team/aw_sqlite3_adapter", 
+  "engines": [
+    "axio-engine@1.1.0-a.79", 
+    "axbuilder.component@1.0.0", 
+    "package_manager.component@1.0.0"
+  ], 
+  "status": "stable", 
+  "topic": "System :: Database", 
+  "include_dirs": [
+    "./include"
+  ]
+}

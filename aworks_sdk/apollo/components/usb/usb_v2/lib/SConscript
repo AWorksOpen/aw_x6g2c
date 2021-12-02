@@ -1,0 +1,26 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+import os
+import shutil
+from config_build_common import     build_common_config
+
+env = DefaultEnvironment();
+
+cur_build_path = Dir('.',False);
+org_build_path = str(cur_build_path.srcnode())
+
+# 包含头文件
+INCLUDE = list(build_common_config.AW_COMMON_INCLUDE)
+
+#安装aw_usb_v2库
+
+lib_usb_v2_file_name = env['LIBPREFIX'] + 'aw_usb_v2' + env['LIBSUFFIX']
+lib_usb_v2_file_path = os.path.join(build_common_config.BUILT_LIBS_SEARCH_PATH,lib_usb_v2_file_name);
+lib_aw_usb_v2_file = [File(lib_usb_v2_file_path)];
+
+Return('lib_aw_usb_v2_file');
+
+
+
+
