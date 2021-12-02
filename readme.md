@@ -4,7 +4,7 @@
 
 | 目录               | 说明                             |
 | ------------------ | -------------------------------- |
-| aworks_awtk_rt1052 | awtk库、源码，以及rt1052适配代码 |
+| aworks_awtk_imx6ul | awtk库、源码，以及imx6ul适配代码 |
 | aworks_sdk         | aworks库、源代码                 |
 | examples           | 应用例程                         |
 | projects           | 工程目录                         |
@@ -12,17 +12,14 @@
 
 ## projects工程目录
 
-| 目录                 | 说明                                                         |
-| -------------------- | ------------------------------------------------------------ |
-| img_rt1050_debug     | eclipse工程，m1052开发板模板工程                             |
-| img_rt1050_debug_mdk | keil工程，m1052开发板模板工程                                |
-| m1052_awtk           | eclipse工程，适配了awtk GUI组件                              |
-| m1052_awtk_mdk       | keil工程，适配了awtk GUI组件                                 |
-| m1052_zws            | eclipse工程，适配了ZWS云平台，<br />文档目录``projects\m1052_zws\tools\doc`` |
+| 目录             | 说明                             |
+| ---------------- | -------------------------------- |
+| img_aw6g2c_debug | eclipse工程，x6g2c开发板模板工程 |
+| aw6g2c_awtk      | eclipse工程，适配了awtk GUI组件  |
 
 - **注意:**
 
-为了防止用户自己配置工程出错，不建议用户自己配置awtk工程和zws工程，可直接使用已经配置好的m1052_awtk、 m1052_awtk_mdk 和 m1052_zws工程，或通过拷贝的方式新建工程。
+为了防止用户自己配置工程出错，不建议用户自己配置awtk工程，可直接使用已经配置好的aw6g2c_awtk工程，或通过拷贝的方式新建工程。
 
 ## 例程说明
 
@@ -233,6 +230,6 @@ SDK默认包含的驱动主要有以下4类：
 * **zigbee**
   * **ZM516**：zigbee 模块， ZM516X 驱动
 
-- **bsp_imx1050**：imx1050板级支持包
-- **cpu_imx1050**：imx1050CPU相关支持
-- **cpu_imx10xx**：imx10xx系列CPU通用驱动
+- **bsp_imx6ul**：imx6ul板级支持包
+- **cpu_imx6ul**：imx6ulCPU相关支持
+- **cpu_imx6ul**：imx6ul系列CPU通用驱动
