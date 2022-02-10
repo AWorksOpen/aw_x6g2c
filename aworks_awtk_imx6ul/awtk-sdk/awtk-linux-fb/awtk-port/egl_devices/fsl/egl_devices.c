@@ -97,6 +97,7 @@ ret_t egl_devices_dispose(void* ctx) {
   assert(eglGetError() == EGL_SUCCESS);
   eglReleaseThread();
 
+  TKMEM_FREE(context);
   return RET_OK;
 }
 
@@ -137,4 +138,11 @@ ret_t egl_devices_swap_buffers(void* ctx) {
 
   eglSwapBuffers(context->egldisplay, context->eglsurface);
   return eglGetError() == EGL_SUCCESS ? RET_OK : RET_FAIL;
+}
+
+ret_t egl_devices_resize(void* ctx, uint32_t w, uint32_t h) {
+  (void)ctx;
+  (void)w;
+  (void)h;
+  return RET_NOT_IMPL;
 }

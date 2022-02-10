@@ -50,9 +50,9 @@ static ret_t color_tile_on_paint_stroke(widget_t* widget, canvas_t* c) {
   border_width = style_get_int(style, STYLE_ID_BORDER_WIDTH, 1);
 
   radius = style_get_int(style, STYLE_ID_ROUND_RADIUS, 0);
-  radius_tl = style_get_int(style, STYLE_ID_ROUND_RADIUS_TOP_LETF, radius);
+  radius_tl = style_get_int(style, STYLE_ID_ROUND_RADIUS_TOP_LEFT, radius);
   radius_tr = style_get_int(style, STYLE_ID_ROUND_RADIUS_TOP_RIGHT, radius);
-  radius_bl = style_get_int(style, STYLE_ID_ROUND_RADIUS_BOTTOM_LETF, radius);
+  radius_bl = style_get_int(style, STYLE_ID_ROUND_RADIUS_BOTTOM_LEFT, radius);
   radius_br = style_get_int(style, STYLE_ID_ROUND_RADIUS_BOTTOM_RIGHT, radius);
 
   canvas_set_stroke_color(c, bd);
@@ -89,9 +89,9 @@ static ret_t color_tile_on_paint_fill(widget_t* widget, canvas_t* c) {
   }
 
   radius = style_get_int(style, STYLE_ID_ROUND_RADIUS, 0);
-  radius_tl = style_get_int(style, STYLE_ID_ROUND_RADIUS_TOP_LETF, radius);
+  radius_tl = style_get_int(style, STYLE_ID_ROUND_RADIUS_TOP_LEFT, radius);
   radius_tr = style_get_int(style, STYLE_ID_ROUND_RADIUS_TOP_RIGHT, radius);
-  radius_bl = style_get_int(style, STYLE_ID_ROUND_RADIUS_BOTTOM_LETF, radius);
+  radius_bl = style_get_int(style, STYLE_ID_ROUND_RADIUS_BOTTOM_LEFT, radius);
   radius_br = style_get_int(style, STYLE_ID_ROUND_RADIUS_BOTTOM_RIGHT, radius);
 
   canvas_set_fill_color(c, color);
@@ -214,4 +214,18 @@ ret_t color_tile_set_value(widget_t* widget, color_t color) {
   }
 
   return RET_OK;
+}
+
+const char* color_tile_get_bg_color(widget_t* widget) {
+  color_tile_t* color_tile = COLOR_TILE(widget);
+  return_value_if_fail(color_tile != NULL, NULL);
+
+  return color_tile->bg_color;
+}
+
+const char* color_tile_get_border_color(widget_t* widget) {
+  color_tile_t* color_tile = COLOR_TILE(widget);
+  return_value_if_fail(color_tile != NULL, NULL);
+
+  return color_tile->border_color;
 }

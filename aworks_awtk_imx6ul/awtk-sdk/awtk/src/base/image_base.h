@@ -109,7 +109,15 @@ typedef struct _image_base_t {
    * 当前是否被选中。
    */
   bool_t selected;
+
+  /*private*/
+  bool_t pressed;
 } image_base_t;
+
+/**
+ * @event {pointer_event_t} EVT_CLICK
+ * 点击事件。
+ */
 
 /**
  * @method image_base_set_image

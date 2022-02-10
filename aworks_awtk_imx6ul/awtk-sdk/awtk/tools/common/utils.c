@@ -79,7 +79,7 @@ void exit_if_need_not_update_for_infiles(const char* out, int infiles_number, ..
   bool_t is_not_need_update = TRUE;
 
   if (out == NULL) {
-    log_debug("invalid params: %s \n", out);
+    log_debug("invalid params\n");
     exit(-1);
   }
 
@@ -317,7 +317,7 @@ wchar_t** argvw_create(int argc, char* argv[]) {
 
   for (i = 0; i < argc; i++) {
     wstr_set_utf8(&str, argv[i]);
-    argvw[i] = wcsdup(str.str);
+    argvw[i] = wcs_dup(str.str);
   }
   argvw[i] = NULL;
 

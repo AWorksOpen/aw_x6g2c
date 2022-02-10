@@ -42,13 +42,13 @@ typedef enum _timer_info_type_t {
 
 /**
  * @class timer_info_t
- * @parent object_t
+ * @parent tk_object_t
  * @annotation ["scriptable"]
  * 单个定时器的信息。
  *
  */
 struct _timer_info_t {
-  object_t object;
+  tk_object_t object;
 
   /**
    * @property {timer_func_t} on_timer
@@ -64,6 +64,14 @@ struct _timer_info_t {
    *
    */
   void* ctx;
+
+  /**
+   * @property {void*} extra_ctx
+   * @annotation ["readable", "scriptable"]
+   * 定时器回调函数的上下文
+   *
+   */
+  void* extra_ctx;
 
   /**
    * @property {uint32_t} id

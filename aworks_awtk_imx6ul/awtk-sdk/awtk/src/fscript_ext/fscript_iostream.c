@@ -24,7 +24,7 @@ static ret_t func_iostream_get_istream(fscript_t* fscript, fscript_args_t* args,
   iostream = TK_IOSTREAM(value_object(args->args));
   FSCRIPT_FUNC_CHECK(iostream != NULL, RET_BAD_PARAMS);
 
-  value_set_object(result, OBJECT(tk_iostream_get_istream(iostream)));
+  value_set_object(result, TK_OBJECT(tk_iostream_get_istream(iostream)));
 
   return RET_OK;
 }
@@ -35,14 +35,16 @@ static ret_t func_iostream_get_ostream(fscript_t* fscript, fscript_args_t* args,
   iostream = TK_IOSTREAM(value_object(args->args));
   FSCRIPT_FUNC_CHECK(iostream != NULL, RET_BAD_PARAMS);
 
-  value_set_object(result, OBJECT(tk_iostream_get_ostream(iostream)));
+  value_set_object(result, TK_OBJECT(tk_iostream_get_ostream(iostream)));
 
   return RET_OK;
 }
 
-ret_t fscript_iostream_register(void) {
-  ENSURE(fscript_register_func("iostream_get_istream", func_iostream_get_istream) == RET_OK);
-  ENSURE(fscript_register_func("iostream_get_ostream", func_iostream_get_ostream) == RET_OK);
+FACTORY_TABLE_BEGIN(s_ext_iostream)
+FACTORY_TABLE_ENTRY("iostream_get_istream", func_iostream_get_istream)
+FACTORY_TABLE_ENTRY("iostream_get_ostream", func_iostream_get_ostream)
+FACTORY_TABLE_END()
 
-  return RET_OK;
+ret_t fscript_iostream_register(void) {
+  return fscript_register_funcs(s_ext_iostream);
 }

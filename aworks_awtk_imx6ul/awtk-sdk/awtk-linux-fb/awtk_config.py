@@ -2,13 +2,16 @@ import os
 import platform
 import shutil
 
+from awtk_config_common import TKC_STATIC_LIBS
+from awtk_config_common import joinPath, toWholeArchive, genIdlAndDefEx, setEnvSpawn,genDllLinkFlags,copySharedLib
+
 OS_NAME = platform.system()
 
 def joinPath(root, subdir):
   return os.path.normpath(os.path.join(root, subdir))
 
-def lcd_deices_is_egl(lcd_deices):
-  if lcd_deices =='egl_for_fsl' or lcd_deices =='egl_for_x11' or lcd_deices =='egl_for_rpi' :
+def lcd_devices_is_egl(lcd_devices):
+  if lcd_devices =='egl_for_fsl' or lcd_devices =='egl_for_x11' or lcd_devices =='egl_for_gbm' :
     return True
   return False
 
@@ -21,8 +24,8 @@ TK_3RD_ROOT      = joinPath(TK_ROOT, '3rd')
 GTEST_ROOT       = joinPath(TK_ROOT, '3rd/gtest/googletest')
 
 BUILD_DIR        = joinPath(TK_LINUX_FB_ROOT, 'build')
-BIN_DIR          = joinPath(BUILD_DIR, 'bin')
-LIB_DIR          = joinPath(BUILD_DIR, 'lib')
+BIN_DIR          = joinPath(TK_LINUX_FB_ROOT, 'bin')
+LIB_DIR          = joinPath(TK_LINUX_FB_ROOT, 'lib')
 VAR_DIR          = joinPath(BUILD_DIR, 'var')
 TK_DEMO_ROOT     = joinPath(TK_ROOT, 'demos')
 
@@ -30,18 +33,20 @@ LCD_DIR        = joinPath(TK_LINUX_FB_ROOT, 'awtk-port/lcd_linux')
 INPUT_DIR      = joinPath(TK_LINUX_FB_ROOT, 'awtk-port/input_thread')
 
 # lcd devices
-LCD_DEICES='fb'
-# LCD_DEICES='drm'
-# LCD_DEICES='egl_for_fsl'
-# LCD_DEICES='egl_for_x11'
-# LCD_DEICES='egl_for_rpi'
+LCD_DEVICES='fb'
+# LCD_DEVICES='drm'
+# LCD_DEVICES='egl_for_fsl'
+# LCD_DEVICES='egl_for_x11'
+# LCD_DEVICES='egl_for_gbm'
 
-if LCD_DEICES =='fb' or LCD_DEICES =='drm' :
+NANOVG_BACKEND=''
+VGCANVAS='NANOVG'
+if LCD_DEVICES =='fb' or LCD_DEVICES =='drm' :
   LCD='LINUX_FB'
   NANOVG_BACKEND='AGGE'
-elif lcd_deices_is_egl(LCD_DEICES) :
+elif lcd_devices_is_egl(LCD_DEVICES) :
   LCD='FB_GL'
-  NANOVG_BACKEND=''
+  NANOVG_BACKEND='GLES2'
 
 #INPUT_ENGINE='null'
 #INPUT_ENGINE='spinyin'
@@ -49,17 +54,17 @@ elif lcd_deices_is_egl(LCD_DEICES) :
 #INPUT_ENGINE='t9ext'
 INPUT_ENGINE='pinyin'
 
-COMMON_CCFLAGS=' -DHAS_STD_MALLOC -DHAS_STDIO -DWITH_VGCANVAS -DWITH_UNICODE_BREAK -DLINUX'
-COMMON_CCFLAGS=COMMON_CCFLAGS+' -DLOAD_ASSET_WITH_MMAP=1 '
+COMMON_CCFLAGS=' -DHAS_STD_MALLOC -DHAS_STDIO -DHAS_FAST_MEMCPY -DWITH_VGCANVAS -DWITH_UNICODE_BREAK -DLINUX'
+COMMON_CCFLAGS=COMMON_CCFLAGS+' -DLOAD_ASSET_WITH_MMAP=1 -DWITH_SOCKET=1 '
 COMMON_CCFLAGS=COMMON_CCFLAGS+' -DWITH_ASSET_LOADER -DWITH_FS_RES -DHAS_GET_TIME_US64=1 ' 
 COMMON_CCFLAGS=COMMON_CCFLAGS+' -DSTBTT_STATIC -DSTB_IMAGE_STATIC -DWITH_STB_IMAGE -DWITH_STB_FONT -DWITH_TEXT_BIDI=1 '
 
-if LCD_DEICES =='fb' :
-  COMMON_CCFLAGS=COMMON_CCFLAGS+' -DWITH_NANOVG_AGGE '
-elif LCD_DEICES =='drm' :
+if LCD_DEVICES =='fb' :
+  COMMON_CCFLAGS=COMMON_CCFLAGS+' -DWITH_NANOVG_AGGE -DWITH_LINUX_FB '
+elif LCD_DEVICES =='drm' :
   COMMON_CCFLAGS=COMMON_CCFLAGS+' -DWITH_NANOVG_AGGE -DWITH_LINUX_DRM '
-elif lcd_deices_is_egl(LCD_DEICES) :
-  COMMON_CCFLAGS=COMMON_CCFLAGS+' -DWITH_NANOVG_GLES2 -DWITH_NANOVG_GL -DWITH_NANOVG_GPU -DWITH_LINUX_EGL '
+elif lcd_devices_is_egl(LCD_DEVICES) :
+  COMMON_CCFLAGS=COMMON_CCFLAGS+' -DWITH_GPU_GL -DWITH_GPU_GLES2 -DWITH_GPU -DWITH_LINUX_EGL '
 
 
 
@@ -89,8 +94,8 @@ OS_CPPPATH=[]
 OS_LINKFLAGS=''
 OS_SUBSYSTEM_CONSOLE=''
 OS_SUBSYSTEM_WINDOWS=''
-OS_FLAGS='-Wall -Os '
-#OS_FLAGS='-g -Wall -Os -mfloat-abi=hard '
+OS_FLAGS='-Wall -Os -fno-strict-aliasing '
+#OS_FLAGS='-g -Wall -Os -mfloat-abi=hard -fno-strict-aliasing '
 
 #for build tslib
 #TSLIB_INC_DIR=joinPath(TK_LINUX_FB_ROOT, '3rd/tslib/src')
@@ -100,7 +105,13 @@ OS_FLAGS='-Wall -Os '
 TSLIB_LIB_DIR='/opt/28x/tslib/lib'
 TSLIB_INC_DIR='/opt/28x/tslib/include'
 TOOLS_PREFIX='/opt/28x/gcc-4.4.4-glibc-2.11.1-multilib-1.0/arm-fsl-linux-gnueabi/bin/arm-linux-'
+
 #TOOLS_PREFIX='/opt/poky/1.7/sysroots/x86_64-pokysdk-linux/usr/bin/arm-poky-linux-gnueabi/arm-poky-linux-gnueabi-'
+
+#for qemu
+TOOLS_PREFIX='/opt/qemu/buildroot-2021.02.2/output/host/bin/arm-linux-'
+TSLIB_LIB_DIR=''
+
 
 #TSLIB_LIB_DIR=''
 #TSLIB_INC_DIR=''
@@ -131,28 +142,28 @@ OS_LIBS = ['stdc++', 'pthread', 'rt', 'm', 'dl']
 #AR=TOOLS_PREFIX+'arm-linux-androideabi-ar'
 #STRIP=TOOLS_PREFIX+'arm-linux-androideabi-strip'
 #RANLIB=TOOLS_PREFIX+"arm-linux-androideabi-ranlib"
-#OS_LINKFLAGS='-static -Wl,--allow-multiple-definition '
+#OS_LINKFLAGS=' -Wl,--allow-multiple-definition '
 #OS_LIBS = ['stdc++', 'm']
 #OS_FLAGS='-Wall -Os -DFB_DEVICE_FILENAME=\\\"\"/dev/graphics/fb0\\\"\" '
 
-if LCD_DEICES =='drm' :
+OS_LINKFLAGS= OS_LINKFLAGS + ' -Wl,-rpath=./bin -Wl,-rpath=./ ' 
+
+if LCD_DEVICES =='drm' :
   #for drm
   OS_FLAGS=OS_FLAGS + ' -DWITH_LINUX_DRM=1 -I/usr/include/libdrm '
   OS_LIBS=OS_LIBS + ['drm']
-elif LCD_DEICES =='egl_for_fsl':
+elif LCD_DEVICES =='egl_for_fsl':
   #for egl for fsl
   OS_FLAGS=OS_FLAGS + ' -DEGL_API_FB '
   OS_LIBS=OS_LIBS + [ 'GLESv2', 'EGL']
-elif LCD_DEICES =='egl_for_x11' :
+elif LCD_DEVICES =='egl_for_x11' :
   #for egl for fsl
   OS_FLAGS=OS_FLAGS + ' -fPIC '
   OS_LIBS=OS_LIBS + [ 'X11', 'EGL', 'GLESv2' ]
-elif LCD_DEICES =='egl_for_rpi' :
-  #for egl for rpi
-  OS_LIBPATH += ['/opt/vc/lib']
-  OS_CPPPATH += ['/opt/vc/include']
-  OS_LIBS=OS_LIBS + [ 'brcmEGL', 'brcmGLESv2', 'bcm_host' ]
-  COMMON_CCFLAGS += ' -DWITH_GLAD_SPECIAL_OPENGL_LIB=\\\"\"/opt/vc/lib/libbrcmGLESv2.so\\\"\" '
+elif LCD_DEVICES =='egl_for_gbm' :
+  #for egl for gbm
+  OS_CPPPATH += ['/usr/include/libdrm', '/usr/include/GLES2']
+  OS_LIBS=OS_LIBS + [ 'drm', 'gbm', 'EGL', 'GLESv2' ]
 
 COMMON_CCFLAGS = COMMON_CCFLAGS + ' -DLINUX -DHAS_PTHREAD -DENABLE_CURSOR -fPIC '
 COMMON_CCFLAGS=COMMON_CCFLAGS+' -DWITH_DATA_READER_WRITER=1 '
@@ -167,22 +178,26 @@ LINKFLAGS=OS_LINKFLAGS;
 LIBPATH=[LIB_DIR, BIN_DIR] + OS_LIBPATH
 CCFLAGS=OS_FLAGS + COMMON_CCFLAGS 
 
-STATIC_LIBS =['awtk_global', 'extwidgets', 'widgets', 'awtk_linux_fb', 'base', 'gpinyin', 'streams', 'conf_io', 'hal', 'csv', 'compressors', 'miniz', 'ubjson', 'tkc_static', 'linebreak', 'fribidi']
+STATIC_LIBS =['awtk_global', 'extwidgets', 'widgets', 'awtk_linux_fb', 'base', 'gpinyin', 'linebreak', 'fribidi']
+STATIC_LIBS += TKC_STATIC_LIBS
 if TSLIB_LIB_DIR != '':
   SHARED_LIBS=['awtk', 'ts'] + OS_LIBS;
 else:
   SHARED_LIBS=['awtk'] + OS_LIBS;
 
-if LCD_DEICES =='fb' or LCD_DEICES =='drm' :
-  STATIC_LIBS = STATIC_LIBS + ['nanovg-agge', 'agge', 'nanovg']  + OS_LIBS
-  AWTK_DLL_DEPS_LIBS = ['nanovg-agge', 'agge', 'nanovg'] + OS_LIBS
-elif lcd_deices_is_egl(LCD_DEICES) :
-  STATIC_LIBS = STATIC_LIBS + ['glad', 'nanovg']  + OS_LIBS
-  AWTK_DLL_DEPS_LIBS = ['glad', 'nanovg'] + OS_LIBS
+if VGCANVAS == 'NANOVG':
+  if LCD_DEVICES =='fb' or LCD_DEVICES =='drm' :
+    STATIC_LIBS = STATIC_LIBS + ['nanovg-agge', 'agge', 'nanovg']  + OS_LIBS
+    AWTK_DLL_DEPS_LIBS = ['nanovg-agge', 'agge', 'nanovg'] + OS_LIBS
+  elif lcd_devices_is_egl(LCD_DEVICES) :
+    CCFLAGS += ' -DWITH_NANOVG_GLES2 -DWITH_NANOVG_GL -DWITH_NANOVG_GPU '
+    STATIC_LIBS = STATIC_LIBS + ['glad', 'nanovg']  + OS_LIBS
+    AWTK_DLL_DEPS_LIBS = ['glad', 'nanovg'] + OS_LIBS
 
-OS_WHOLE_ARCHIVE =' -Wl,--whole-archive -lfribidi -lawtk_global -lextwidgets -lwidgets -lawtk_linux_fb -lbase -lgpinyin -ltkc_static -lstreams -lconf_io -lhal -lcsv -lubjson -lcompressors -lminiz -llinebreak -Wl,--no-whole-archive'
 
 LIBS=STATIC_LIBS
+AWTK_STATIC_LIBS = LIBS
+OS_WHOLE_ARCHIVE =toWholeArchive(LIBS)
 
 CPPPATH=[TK_ROOT, 
   TK_SRC, 
@@ -197,6 +212,8 @@ CPPPATH=[TK_ROOT,
   joinPath(TK_3RD_ROOT, 'nanovg'), 
   joinPath(TK_3RD_ROOT, 'nanovg/gl'), 
   joinPath(TK_3RD_ROOT, 'nanovg/base'), 
+  joinPath(TK_3RD_ROOT, 'mbedtls/include'), 
+  joinPath(TK_3RD_ROOT, 'mbedtls/3rdparty/everest/include'), 
   joinPath(TK_3RD_ROOT, 'fribidi'), 
   joinPath(TK_3RD_ROOT, 'nanovg/base'), 
   joinPath(TK_3RD_ROOT, 'libunibreak'), 
@@ -211,13 +228,13 @@ if TSLIB_LIB_DIR != '':
   CPPPATH = [TSLIB_INC_DIR] + CPPPATH;
 
 os.environ['LCD'] = LCD
-os.environ['LCD_DEICES'] = LCD_DEICES
+os.environ['LCD_DEVICES'] = LCD_DEVICES
 os.environ['TARGET_ARCH'] = 'arm'
 os.environ['BIN_DIR'] = BIN_DIR;
 os.environ['LIB_DIR'] = LIB_DIR;
 os.environ['TK_ROOT'] = TK_ROOT;
 os.environ['CCFLAGS'] = CCFLAGS;
-os.environ['VGCANVAS'] = 'NANOVG'
+os.environ['VGCANVAS'] = VGCANVAS
 os.environ['INPUT_ENGINE'] = INPUT_ENGINE;
 os.environ['TSLIB_LIB_DIR'] = TSLIB_LIB_DIR;
 os.environ['NANOVG_BACKEND'] = NANOVG_BACKEND;
@@ -227,9 +244,9 @@ os.environ['TOOLS_NAME'] = '';
 os.environ['GRAPHIC_BUFFER'] = GRAPHIC_BUFFER;
 os.environ['WITH_AWTK_SO'] = 'true'
 
-if LCD_DEICES =='fb' or LCD_DEICES =='drm' :
+if LCD_DEVICES =='fb' or LCD_DEVICES =='drm' :
   os.environ['NATIVE_WINDOW'] = 'raw';
-elif lcd_deices_is_egl(LCD_DEICES) :
+elif lcd_devices_is_egl(LCD_DEVICES) :
   os.environ['NATIVE_WINDOW'] = 'fb_gl';
 
 
@@ -241,7 +258,7 @@ def has_custom_cc():
     return True
 
 def copySharedLib(src, dst, name):
-  src = os.path.join(src, 'build/bin/lib'+name+'.so')
+  src = os.path.join(src, 'bin/lib'+name+'.so')
   src = os.path.normpath(src);
   dst = os.path.normpath(dst);
 

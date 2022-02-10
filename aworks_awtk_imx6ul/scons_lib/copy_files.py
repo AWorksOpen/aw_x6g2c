@@ -119,6 +119,8 @@ copyAwtkFiles('src/window_animators', 'awtk/src/window_animators')
 copyAwtkFiles('src/dialog_highlighters', 'awtk/src/dialog_highlighters')
 
 copyAwtkFile('src/awtk.h', 'awtk/src/awtk.h')
+copyAwtkFile('src/awtk_version.h', 'awtk/src/awtk_version.h')
+copyAwtkFile('src/tkc.h', 'awtk/src/tkc.h')
 copyAwtkFile('src/awtk_tkc.h', 'awtk/src/awtk_tkc.h')
 copyAwtkFile('src/awtk_base.h', 'awtk/src/awtk_base.h')
 copyAwtkFile('src/awtk_global.c', 'awtk/src/awtk_global.c')

@@ -43,11 +43,11 @@ static const object_vtable_t s_timer_info_vtable = {
     .desc = "timer_info",
     .size = sizeof(timer_info_t),
     .is_collection = FALSE,
-    .on_destroy = (object_on_destroy_t)timer_info_on_destroy};
+    .on_destroy = (tk_object_on_destroy_t)timer_info_on_destroy};
 
 timer_info_t* timer_info_create(timer_manager_t* tm, timer_func_t on_timer, void* ctx,
                                 uint32_t duration, uint16_t timer_info_type) {
-  object_t* obj = object_create(&s_timer_info_vtable);
+  tk_object_t* obj = tk_object_create(&s_timer_info_vtable);
   timer_info_t* timer = TIMER_INFO(obj);
   return_value_if_fail(timer != NULL, NULL);
 
@@ -58,13 +58,17 @@ timer_info_t* timer_info_create(timer_manager_t* tm, timer_func_t on_timer, void
   timer->timer_info_type = timer_info_type;
 
   if (tm != NULL) {
+    uint32_t id = timer_manager_get_next_timer_id(tm);
+    timer->id = id;
     timer->timer_manager = tm;
     timer->start = tm->get_time();
-    timer->id = tm->next_timer_id++;
-    if (timer->id == TK_INVALID_ID) {
-      timer->id = tm->next_timer_id++;
+
+    if (id != TK_INVALID_ID) {
+      timer_manager_append(tm, timer);
+    } else {
+      tk_object_unref(obj);
+      return_value_if_fail(id != TK_INVALID_ID, NULL);
     }
-    timer_manager_append(tm, timer);
   }
 
   return timer;

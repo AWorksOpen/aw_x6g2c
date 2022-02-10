@@ -22,9 +22,10 @@
 #ifndef AWTK_EXT_WIDGETS_H
 #define AWTK_EXT_WIDGETS_H
 
+#include "vpage/vpage.h"
 #include "switch/switch.h"
-#include "guage/guage.h"
-#include "guage/guage_pointer.h"
+#include "gauge/gauge.h"
+#include "gauge/gauge_pointer.h"
 #include "gif_image/gif_image.h"
 #include "svg_image/svg_image.h"
 #include "keyboard/keyboard.h"

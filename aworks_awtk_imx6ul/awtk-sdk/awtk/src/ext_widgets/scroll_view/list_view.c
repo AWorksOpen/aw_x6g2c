@@ -104,14 +104,16 @@ static ret_t list_view_on_wheel_before(void* ctx, event_t* e) {
 
 static bool_t list_view_is_play_floating_scroll_bar_animtion(list_view_t* list_view) {
   scroll_view_t* scroll_view = NULL;
-  return_value_if_fail(
-      list_view != NULL && list_view->scroll_bar != NULL && list_view->scroll_view != NULL, FALSE);
-  scroll_view = SCROLL_VIEW(list_view->scroll_view);
-  return_value_if_fail(scroll_view != NULL, FALSE);
+  return_value_if_fail(list_view != NULL && list_view->scroll_view != NULL, FALSE);
 
-  if (list_view->floating_scroll_bar && list_view->scroll_bar->enable &&
-      scroll_view->virtual_h >= list_view->widget.h) {
-    return TRUE;
+  if (list_view->scroll_bar != NULL) {
+    scroll_view = SCROLL_VIEW(list_view->scroll_view);
+    return_value_if_fail(scroll_view != NULL, FALSE);
+
+    if (list_view->floating_scroll_bar && list_view->scroll_bar->enable &&
+        scroll_view->virtual_h >= list_view->widget.h) {
+      return TRUE;
+    }
   }
   return FALSE;
 }
@@ -326,8 +328,7 @@ static ret_t list_view_on_scroll_view_paint_children(widget_t* widget, canvas_t*
     continue;
   }
 
-  if (left > c->clip_right || right < c->clip_left || top > c->clip_bottom ||
-      bottom < c->clip_top) {
+  if (!canvas_is_rect_in_clip_rect(c, left, top, right, bottom)) {
     iter->dirty = FALSE;
     continue;
   }
@@ -419,11 +420,6 @@ ret_t list_view_reinit(widget_t* widget) {
   if (iter && tk_str_eq(iter->vt->type, WIDGET_TYPE_SCROLL_VIEW)) {
     if (iter == list_view->scroll_view) break;
     scroll_view_t* scroll_view = SCROLL_VIEW(list_view->scroll_view);
-    if (scroll_view != NULL) {
-      scroll_view->on_scroll = NULL;
-      scroll_view->on_scroll_to = NULL;
-      scroll_view->on_layout_children = NULL;
-    }
     list_view->scroll_view = iter;
     scroll_view->on_scroll = list_view_on_scroll_view_scroll;
     scroll_view->on_scroll_to = list_view_on_scroll_view_scroll_to;

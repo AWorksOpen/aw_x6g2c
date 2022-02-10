@@ -1,5 +1,15 @@
 # 最新动态
 
+2021/05/22
+  * 添加 table_client_set_on_prepare_row 接口，主要用于 MVVM 绑定。
+  * 完善 Demo。
+
+2021/05/22
+  * fix table client layout
+
+2021/05/12
+  * 修复table\_row创建行时回调函数无效的问题（感谢雨欣提供补丁）
+
 2020/12/16
   * 修复awtk-widget-table-view中widget\_move\_resize函数无效导致行重叠的问题(感谢雨欣提供补丁)。
 

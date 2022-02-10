@@ -1,7 +1,9 @@
-awtk-v1.5.5
+awtk-sdk-v22.01.0
 ====================
-awtk:1.5+sha.a98179d
-awtk-examples.v2:2.0.3+sha.e2e54ed
-awtk-linux-fb:1.1.7+sha.1b86fa3
-awtk-widget-generator:1.0.2+sha.91d9f64
-awtk-widget-store:1.0.4+sha.45d92f6
+awtk:1.7.0+sha.b80e28c
+jerryscript:3.0.0+sha.3737a28
+awtk-mvvm:1.0.2+sha.483ed9a
+awtk-examples:2.0.5+sha.231bbfb
+awtk-linux-fb:1.1.9+sha.65ec622
+awtk-widget-generator:1.0.3+sha.a799903
+awtk-widget-store:1.0.6+sha.eecfe9a

@@ -1,5 +1,9 @@
 版本记录
 ========
+.. describe:: 2.0.1 <2022-02-09>
+    
+    * awtk:update aworks_awtk_imx6ul to 1.0.1
+    
 .. describe:: 2.0.0 <2021-11-29>
     * 发布2.0.0正式版本sdk包
 

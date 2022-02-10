@@ -235,4 +235,42 @@
  * #define WITH_LCD_CLEAR_ALPHA 1
  */
 
+/**
+ * 如果支持多块不连续的内存块，请定义内存块的数目。
+ * 
+ * #define TK_MAX_MEM_BLOCK_NR 4
+ */
+
+/**
+ * 用于控制窗口动画是否使用缓存。开启后可以降低内存需求(减少2倍framebuffer大小的内存)，如果内存紧缺，在下面情况可以开启：
+ *  1. 界面简单
+ *  2. CPU速度快
+ *
+ * 如果绘制速度慢，而且内存紧缺，建议关闭窗口动画。
+ *
+ * 限制条件：
+ *  1.不支持缩放窗口动画。
+ *  2.不支持对话框高亮策略。
+ * 
+ * #define WITHOUT_WINDOW_ANIMATOR_CACHE 1
+ */
+
+/**
+ * 如果需要配置文件或者使用data_reader/data_writer，请定义本宏。
+ *
+ * #define WITH_DATA_READER_WRITER 1
+ */
+
+/**
+ * 对于低端平台，如果不使用 fscript 模块，请定义本宏。
+ *
+ * #define WITHOUT_FSCRIPT 1
+ */
+
+/**
+ * 对于极简键盘(3keys/5keys)，如果希望激活状态呈现不同的外观效果，请定义本宏。 
+ *
+ * #define WITH_STATE_ACTIVATED 1
+ */
+
 #endif /*AWTK_CONFIG_H*/

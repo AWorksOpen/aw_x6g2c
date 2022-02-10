@@ -244,6 +244,9 @@ float_t value_float(const value_t* v) {
   return_value_if_fail(v->type != VALUE_TYPE_INVALID, 0);
 
   switch (v->type) {
+    case VALUE_TYPE_BOOL: {
+      return (float_t)v->value.b;
+    }
     case VALUE_TYPE_INT8: {
       return (float_t)v->value.i8;
     }
@@ -444,6 +447,7 @@ ret_t value_deep_copy(value_t* dst, const value_t* src) {
       break;
     }
     case VALUE_TYPE_BINARY:
+    case VALUE_TYPE_GRADIENT:
     case VALUE_TYPE_UBJSON: {
       if (src->value.binary_data.data != NULL) {
         uint32_t size = src->value.binary_data.size;
@@ -465,7 +469,7 @@ ret_t value_deep_copy(value_t* dst, const value_t* src) {
       break;
     }
     case VALUE_TYPE_OBJECT: {
-      object_ref(dst->value.object);
+      tk_object_ref(dst->value.object);
       dst->free_handle = dst->value.object != NULL;
       break;
     }
@@ -587,11 +591,12 @@ bool_t value_equal(const value_t* v, const value_t* other) {
       return (v->value.wstr == other->value.wstr) || tk_wstr_eq(v->value.wstr, other->value.wstr);
     }
     case VALUE_TYPE_BINARY:
+    case VALUE_TYPE_GRADIENT:
     case VALUE_TYPE_UBJSON: {
       return (v->value.binary_data.data == other->value.binary_data.data);
     }
     case VALUE_TYPE_OBJECT: {
-      return object_compare(v->value.object, other->value.object) == 0;
+      return tk_object_compare(v->value.object, other->value.object) == 0;
     }
     default:
       break;
@@ -617,7 +622,9 @@ ret_t value_reset(value_t* v) {
         TKMEM_FREE(v->value.sized_str.str);
         break;
       }
-      case VALUE_TYPE_BINARY: {
+      case VALUE_TYPE_BINARY:
+      case VALUE_TYPE_UBJSON:
+      case VALUE_TYPE_GRADIENT: {
         TKMEM_FREE(v->value.binary_data.data);
         break;
       }
@@ -630,9 +637,9 @@ ret_t value_reset(value_t* v) {
         break;
       }
       case VALUE_TYPE_OBJECT: {
-        object_t* obj = v->value.object;
+        tk_object_t* obj = v->value.object;
         v->value.object = NULL;
-        OBJECT_UNREF(obj);
+        TK_OBJECT_UNREF(obj);
         break;
       }
       default:
@@ -654,14 +661,14 @@ ret_t value_destroy(value_t* v) {
   return RET_OK;
 }
 
-value_t* value_set_object(value_t* v, object_t* value) {
+value_t* value_set_object(value_t* v, tk_object_t* value) {
   return_value_if_fail(v != NULL && value != NULL, NULL);
 
   v->value.object = value;
   return value_init(v, VALUE_TYPE_OBJECT);
 }
 
-object_t* value_object(const value_t* v) {
+tk_object_t* value_object(const value_t* v) {
   return_value_if_fail(v != NULL && v->type == VALUE_TYPE_OBJECT, NULL);
 
   return v->value.object;
@@ -731,7 +738,9 @@ value_t* value_dup_binary_data(value_t* v, const void* data, uint32_t size) {
 
 binary_data_t* value_binary_data(const value_t* v) {
   return_value_if_fail(v != NULL, NULL);
-  return_value_if_fail(v->type == VALUE_TYPE_BINARY, NULL);
+  return_value_if_fail(v->type == VALUE_TYPE_BINARY || v->type == VALUE_TYPE_GRADIENT ||
+                           v->type == VALUE_TYPE_UBJSON,
+                       NULL);
 
   return (binary_data_t*)&(v->value.binary_data);
 }
@@ -748,6 +757,22 @@ value_t* value_set_ubjson(value_t* v, void* data, uint32_t size) {
 binary_data_t* value_ubjson(const value_t* v) {
   return_value_if_fail(v != NULL, NULL);
   return_value_if_fail(v->type == VALUE_TYPE_UBJSON, NULL);
+
+  return (binary_data_t*)&(v->value.binary_data);
+}
+
+value_t* value_set_gradient(value_t* v, void* data, uint32_t size) {
+  return_value_if_fail(v != NULL, NULL);
+
+  v->value.binary_data.data = data;
+  v->value.binary_data.size = size;
+
+  return value_init(v, VALUE_TYPE_GRADIENT);
+}
+
+binary_data_t* value_gradient(const value_t* v) {
+  return_value_if_fail(v != NULL, NULL);
+  return_value_if_fail(v->type == VALUE_TYPE_GRADIENT, NULL);
 
   return (binary_data_t*)&(v->value.binary_data);
 }
@@ -781,10 +806,12 @@ const char* value_str_ex(const value_t* v, char* buff, uint32_t size) {
   } else if (v->type == VALUE_TYPE_POINTER) {
     tk_snprintf(buff, size, "%p", value_pointer(v));
   } else if (v->type == VALUE_TYPE_OBJECT) {
-    object_t* obj = value_object(v);
+    tk_object_t* obj = value_object(v);
     if (obj != NULL) {
       tk_snprintf(buff, size, "object(%p:%s)", obj, obj->vt->type);
     }
+  } else if (v->type == VALUE_TYPE_INVALID) {
+    *buff = '\0';
   } else {
     tk_snprintf(buff, size, "%d", value_int(v));
   }

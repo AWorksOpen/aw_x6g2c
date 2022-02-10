@@ -114,7 +114,7 @@ typedef enum _value_type_t {
   VALUE_TYPE_WSTRING,
   /**
    * @const VALUE_TYPE_OBJECT
-   * object_t*类型。
+   * tk_object_t*类型。
    */
   VALUE_TYPE_OBJECT,
   /**
@@ -137,9 +137,13 @@ typedef enum _value_type_t {
    * 特殊用途。
    */
   VALUE_TYPE_TOKEN,
+  /**
+   * @const VALUE_TYPE_GRADIENT
+   * 渐变颜色。
+   */
+  VALUE_TYPE_GRADIENT,
 } value_type_t;
 
-#pragma pack(push, 1)
 typedef struct _binary_data_t {
   uint32_t size;
   void* data;
@@ -169,7 +173,6 @@ typedef struct _sized_str_t {
 struct _value_t {
   uint32_t type : 8;
   uint32_t free_handle : 1;
-
   union {
     int8_t i8;
     uint8_t u8;
@@ -187,12 +190,11 @@ struct _value_t {
     void* ptr;
     const char* str;
     const wchar_t* wstr;
-    object_t* object;
+    tk_object_t* object;
     binary_data_t binary_data;
     sized_str_t sized_str;
   } value;
 };
-#pragma pack(pop)
 
 /**
  * @method value_set_bool
@@ -585,11 +587,11 @@ value_t* value_set_int(value_t* v, int32_t value);
  * 设置类型为object的值。
  * @annotation ["scriptable"]
  * @param {value_t*} v  value对象。
- * @param {object_t*}  value 待设置的值。
+ * @param {tk_object_t*}  value 待设置的值。
  *
  * @return {value_t*} value对象本身。
  */
-value_t* value_set_object(value_t* v, object_t* value);
+value_t* value_set_object(value_t* v, tk_object_t* value);
 
 /**
  * @method value_object
@@ -597,9 +599,9 @@ value_t* value_set_object(value_t* v, object_t* value);
  * @annotation ["scriptable"]
  * @param {value_t*} v value对象。
  *
- * @return {object_t*} 值。
+ * @return {tk_object_t*} 值。
  */
-object_t* value_object(const value_t* v);
+tk_object_t* value_object(const value_t* v);
 
 /**
  * @method value_set_token
@@ -692,6 +694,26 @@ value_t* value_set_ubjson(value_t* v, void* data, uint32_t size);
  * @return {binary_data_t*} 值。
  */
 binary_data_t* value_ubjson(const value_t* v);
+
+/**
+ * @method value_set_gradient
+ * 设置类型为gradient的值。
+ * @param {value_t*} v  value对象。
+ * @param {void*}  value 待设置的值。
+ * @param {uint32_t}  size 长度。
+ *
+ * @return {value_t*} value对象本身。
+ */
+value_t* value_set_gradient(value_t* v, void* data, uint32_t size);
+
+/**
+ * @method value_gradient
+ * 获取为gradient的值。
+ * @param {value_t*} v value对象。
+ *
+ * @return {binary_data_t*} 值。
+ */
+binary_data_t* value_gradient(const value_t* v);
 
 /**
  * @method value_copy

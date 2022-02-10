@@ -137,26 +137,26 @@ typedef struct _slider_t {
   bool_t slide_with_bar;
 
   /*private*/
+  bool_t pressed;
   bool_t dragging;
   double saved_value;
   point_t down;
   rect_t dragger_rect;
-  uint64_t last_user_action_time;
 
 } slider_t;
 
 /**
- * @event {event_t} EVT_VALUE_WILL_CHANGE
+ * @event {value_change_event_t} EVT_VALUE_WILL_CHANGE
  * 值即将改变事件。
  */
 
 /**
- * @event {event_t} EVT_VALUE_CHANGING
+ * @event {value_change_event_t} EVT_VALUE_CHANGING
  * 值正在改变事件(拖动中)。
  */
 
 /**
- * @event {event_t} EVT_VALUE_CHANGED
+ * @event {value_change_event_t} EVT_VALUE_CHANGED
  * 值改变事件。
  */
 

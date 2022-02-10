@@ -132,6 +132,11 @@ typedef struct _event_t {
    */
   void* target;
 
+  /**
+   * @property {void*} native_window_handle
+   * @annotation ["readable"]
+   * 原生窗口句柄。
+   */
   void* native_window_handle;
 } event_t;
 
@@ -151,6 +156,16 @@ typedef ret_t (*event_func_t)(void* ctx, event_t* e);
 event_t* event_cast(event_t* event);
 
 /**
+ * @method event_get_type
+ * 获取event类型。 
+ * @annotation ["scriptable"]
+ * @param {event_t*} event event对象。
+ *
+ * @return {uint32_t}  返回event类型。
+ */
+uint32_t event_get_type(event_t* event);
+
+/**
  * @method event_create
  * @annotation ["constructor", "scriptable", "gc"]
  * 创建event对象。
@@ -161,6 +176,17 @@ event_t* event_cast(event_t* event);
  * @return {event_t*} 返回事件对象。
  */
 event_t* event_create(uint32_t type);
+
+/**
+ * @method event_clone
+ * @annotation ["constructor"]
+ * clone事件对象。
+ *
+ * @param {event_t*} event event对象。
+ *
+ * @return {event_t*} 返回事件对象。
+ */
+event_t* event_clone(event_t* event);
 
 /**
  * @method event_destroy

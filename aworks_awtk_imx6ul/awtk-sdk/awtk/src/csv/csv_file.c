@@ -95,7 +95,7 @@ ret_t csv_row_to_str(csv_row_t* row, str_t* str, char sep) {
   return_value_if_fail(row != NULL && str != NULL, RET_BAD_PARAMS);
 
   str_set(str, "");
-  while ((i + 1) < row->size) {
+  while (i < row->size) {
     const char* p = row->buff + i;
     csv_col_to_str(str, p, sep);
     str_append_char(str, sep);
@@ -351,7 +351,7 @@ csv_file_t* csv_file_load(csv_file_t* csv) {
   input = tk_istream_file_create(csv->filename);
   return_value_if_fail(input != NULL, NULL);
   csv_file_load_input(csv, input);
-  OBJECT_UNREF(input);
+  TK_OBJECT_UNREF(input);
 
   return csv;
 }
@@ -473,9 +473,9 @@ ret_t csv_file_load_buff(csv_file_t* csv, const char* buff, uint32_t size) {
 
   csv_file_clear(csv);
   ret = csv_file_load_input(csv, input) != NULL ? RET_OK : RET_FAIL;
-  OBJECT_UNREF(input);
+  TK_OBJECT_UNREF(input);
 
-  return RET_OK;
+  return ret;
 }
 
 csv_file_t* csv_file_create_with_buff(const char* buff, uint32_t size, char sep) {

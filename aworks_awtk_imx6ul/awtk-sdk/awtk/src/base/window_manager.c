@@ -101,8 +101,11 @@ static ret_t window_manager_back_to_win_sync(widget_t* widget, widget_t* target)
   top = wins.size > 0 ? WIDGET(darray_pop(&wins)) : NULL;
   for (k = 0; k < wins.size; k++) {
     widget_t* iter = WIDGET(wins.elms[k]);
-    assert(!widget_is_dialog(iter));
-    window_manager_close_window_force(widget, iter);
+    if (widget_is_dialog(iter) && dialog_is_modal(iter)) {
+      dialog_quit(iter, DIALOG_QUIT_NONE);
+    } else {
+      window_manager_close_window_force(widget, iter);
+    }
   }
   darray_deinit(&wins);
 
@@ -255,12 +258,11 @@ ret_t window_manager_close_window_force(widget_t* widget, widget_t* window) {
 
 ret_t window_manager_check_and_layout(widget_t* widget) {
   WIDGET_FOR_EACH_CHILD_BEGIN(widget, iter, i)
-  if (iter->need_relayout_children) {
-    widget_layout_children(iter);
-  } else {
-    window_manager_check_and_layout(iter);
+  if (WINDOW_BASE(iter)->need_relayout) {
+    widget_layout(iter);
+    window_base_set_need_relayout(iter, FALSE);
   }
-  WIDGET_FOR_EACH_CHILD_END()
+  WIDGET_FOR_EACH_CHILD_END();
 
   return RET_OK;
 }
@@ -281,8 +283,6 @@ ret_t window_manager_dispatch_input_event(widget_t* widget, event_t* e) {
   return_value_if_fail(wm->vt->dispatch_input_event != NULL, RET_BAD_PARAMS);
 
   if (wm->ignore_input_events) {
-    log_debug("waiting cursort, ignore input events");
-
     return RET_STOP;
   }
 
@@ -298,10 +298,25 @@ ret_t window_manager_dispatch_input_event(widget_t* widget, event_t* e) {
 ret_t window_manager_set_show_fps(widget_t* widget, bool_t show_fps) {
   window_manager_t* wm = WINDOW_MANAGER(widget);
   return_value_if_fail(wm != NULL && wm->vt != NULL, RET_BAD_PARAMS);
-  return_value_if_fail(wm->vt->set_show_fps != NULL, RET_BAD_PARAMS);
 
   wm->show_fps = show_fps;
-  return wm->vt->set_show_fps(widget, show_fps);
+  if (wm->vt->set_show_fps != NULL) {
+    return wm->vt->set_show_fps(widget, show_fps);
+  } else {
+    return RET_OK;
+  }
+}
+
+ret_t window_manager_set_max_fps(widget_t* widget, uint32_t max_fps) {
+  window_manager_t* wm = WINDOW_MANAGER(widget);
+  return_value_if_fail(wm != NULL && wm->vt != NULL, RET_BAD_PARAMS);
+
+  wm->max_fps = max_fps;
+  if (wm->vt->set_max_fps != NULL) {
+    return wm->vt->set_max_fps(widget, max_fps);
+  } else {
+    return RET_OK;
+  }
 }
 
 ret_t window_manager_set_screen_saver_time(widget_t* widget, uint32_t time) {
@@ -468,6 +483,7 @@ static ret_t wm_on_locale_changed(void* ctx, event_t* e) {
 
 static ret_t on_theme_changed(void* ctx, const void* data) {
   widget_t* widget = WIDGET(data);
+  widget_set_need_update_style(widget);
   widget_update_style(widget);
 
   return RET_OK;
@@ -502,6 +518,7 @@ widget_t* window_manager_init(window_manager_t* wm, const widget_vtable_t* wvt,
   locale_info_on(locale_info(), EVT_LOCALE_CHANGED, wm_on_locale_changed, wm);
   wm->vt = vt;
   wm->global_emitter = emitter_create();
+  wm->curr_expected_sleep_time = 0xFFFFFFFF;
   widget_on(widget, EVT_DESTROY, window_manager_on_destroy, widget);
 
   return widget;
@@ -690,12 +707,37 @@ ret_t window_manager_end_wait_pointer_cursor(widget_t* widget) {
 ret_t window_manager_close_all(widget_t* widget) {
   return_value_if_fail(widget != NULL, RET_BAD_PARAMS);
 
-  WIDGET_FOR_EACH_CHILD_BEGIN_R(widget, iter, i)
-  if (iter->emitter != NULL) {
-    emitter_disable(iter->emitter);
-  }
-  window_manager_close_window_force(widget, iter);
-  WIDGET_FOR_EACH_CHILD_END();
+  do {
+    uint32_t nr = widget_count_children(widget);
+    if (nr > 0) {
+      widget_t* win = widget_get_child(widget, nr - 1);
+      window_manager_close_window_force(widget, win);
+    } else {
+      break;
+    }
+  } while (TRUE);
 
+  return RET_OK;
+}
+
+ret_t window_manager_set_ignore_input_events(widget_t* widget, bool_t ignore_input_events) {
+  window_manager_t* wm = WINDOW_MANAGER(widget);
+  return_value_if_fail(wm != NULL && wm->vt != NULL, RET_BAD_PARAMS);
+  wm->ignore_input_events = ignore_input_events;
+
+  return RET_OK;
+}
+
+uint32_t window_manager_get_curr_expected_sleep_time(widget_t* widget) {
+  window_manager_t* wm = WINDOW_MANAGER(widget);
+  return_value_if_fail(wm != NULL && wm->vt != NULL, 0xFFFFFFFF);
+  return wm->curr_expected_sleep_time;
+}
+
+ret_t window_manager_set_curr_expected_sleep_time(widget_t* widget,
+                                                  uint32_t curr_expected_sleep_time) {
+  window_manager_t* wm = WINDOW_MANAGER(widget);
+  return_value_if_fail(wm != NULL && wm->vt != NULL, RET_BAD_PARAMS);
+  wm->curr_expected_sleep_time = curr_expected_sleep_time;
   return RET_OK;
 }

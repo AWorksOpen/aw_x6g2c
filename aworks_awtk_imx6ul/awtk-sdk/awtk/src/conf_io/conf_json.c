@@ -1,4 +1,4 @@
-/**
+﻿/**
  * File:   conf_json.c
  * Author: AWTK Develop Team
  * Brief:  json 
@@ -104,7 +104,7 @@ static ret_t conf_json_skip_to_value_end(json_parser_t* parser) {
 
 static ret_t conf_json_skip_spaces(json_parser_t* parser) {
   while (parser->cursor < parser->size) {
-    if (!isspace(parser->data[parser->cursor])) {
+    if (!tk_isspace(parser->data[parser->cursor])) {
       break;
     }
     parser->cursor++;
@@ -201,7 +201,25 @@ static ret_t conf_json_parse_number(json_parser_t* parser) {
 
   conf_json_skip_to_value_end(parser);
   str_set_with_len(s, parser->data + start, parser->cursor - start);
-  value_set_double(&v, tk_atof(s->str));
+
+  if (strchr(s->str, '.') == NULL && strchr(s->str, 'E') == NULL) {
+    int64_t n = tk_atol(s->str);
+    if (n < INT_MAX && n > INT_MIN) {
+      value_set_int32(&v, n);
+    } else {
+      value_set_int64(&v, n);
+    }
+  } else {
+    value_set_double(&v, tk_atof(s->str));
+  }
+
+  return conf_node_set_value(parser->current, &v);
+}
+
+static ret_t conf_json_parse_null_string(json_parser_t* parser) {
+  value_t v;
+  conf_json_skip_to_value_end(parser);
+  value_set_str(&v, NULL);
 
   return conf_node_set_value(parser->current, &v);
 }
@@ -247,11 +265,13 @@ static ret_t conf_json_parse_value(json_parser_t* parser) {
       } else {
         return conf_json_parse_object(parser);
       }
-    } else if (!isspace(c)) {
+    } else if (!tk_isspace(c)) {
       if (c == '\"') {
         return conf_json_parse_string(parser);
       } else if (c == 't' || c == 'f') {
         return conf_json_parse_bool(parser);
+      } else if (c == 'n' && strncmp(p + parser->cursor, "null", 4) == 0) {
+        return conf_json_parse_null_string(parser);
       } else {
         return conf_json_parse_number(parser);
       }
@@ -468,12 +488,12 @@ error:
   return RET_FAIL;
 }
 
-object_t* conf_json_load(const char* url, bool_t create_if_not_exist) {
+tk_object_t* conf_json_load(const char* url, bool_t create_if_not_exist) {
   return conf_obj_create(conf_doc_save_json_writer, conf_doc_load_json_reader, url,
                          create_if_not_exist);
 }
 
-ret_t conf_json_save_as(object_t* obj, const char* url) {
+ret_t conf_json_save_as(tk_object_t* obj, const char* url) {
   data_writer_t* writer = NULL;
   conf_doc_t* doc = conf_obj_get_doc(obj);
   return_value_if_fail(doc != NULL && url != NULL, RET_BAD_PARAMS);
@@ -486,6 +506,6 @@ ret_t conf_json_save_as(object_t* obj, const char* url) {
   return RET_OK;
 }
 
-object_t* conf_json_create(void) {
+tk_object_t* conf_json_create(void) {
   return conf_json_load(NULL, TRUE);
 }

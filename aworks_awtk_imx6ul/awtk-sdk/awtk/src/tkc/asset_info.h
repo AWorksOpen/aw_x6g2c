@@ -57,7 +57,7 @@ typedef enum _asset_type_t {
 
   /**
    * @const ASSET_TYPE_STYLE
-   * 主题资源。
+   * 窗体样式资源。
    */
   ASSET_TYPE_STYLE,
 
@@ -366,6 +366,30 @@ ret_t asset_info_unref(asset_info_t* info);
  * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
  */
 ret_t asset_info_ref(asset_info_t* info);
+
+/**
+ * @method asset_info_get_type
+ *
+ * 获取类型。
+ * @annotation ["scriptable"]
+ *
+ * @param {asset_info_t*} info asset_info对象。
+ *
+ * @return {uint16_t} 返回类型。
+ */
+uint16_t asset_info_get_type(asset_info_t* info);
+
+/**
+ * @method asset_info_get_name
+ *
+ * 获取名称。
+ * @annotation ["scriptable"]
+ *
+ * @param {asset_info_t*} info asset_info对象。
+ *
+ * @return {const char*} 返回名称。
+ */
+const char* asset_info_get_name(asset_info_t* info);
 
 /**
  * @method asset_info_get_formatted_name

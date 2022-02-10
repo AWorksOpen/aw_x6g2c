@@ -298,6 +298,12 @@ bool_t file_exist(const char* name) {
   return fs_file_exist(os_fs(), name);
 }
 
+bool_t dir_exist(const char* name) {
+  return_value_if_fail(name != NULL, FALSE);
+
+  return fs_dir_exist(os_fs(), name);
+}
+
 ret_t fs_test_file(fs_t* fs) {
   char buff[32];
   fs_file_t* fp = NULL;
@@ -344,6 +350,8 @@ ret_t fs_test_dir(fs_t* fs) {
   fs_item_t item;
   fs_dir_t* dir = NULL;
 
+  fs_remove_dir_r(fs, "./a");
+  fs_remove_dir_r(fs, "./b");
   assert(!fs_dir_exist(fs, "./a"));
   assert(fs_create_dir(fs, "./a") == RET_OK);
   assert(fs_dir_exist(fs, "./a"));
@@ -469,17 +477,31 @@ ret_t fs_build_user_storage_file_name(char filename[MAX_PATH + 1], const char* a
 #include "tkc/tokenizer.h"
 
 ret_t fs_create_dir_r(fs_t* fs, const char* name) {
+  int32_t len = 0;
   char path[MAX_PATH + 1];
   tokenizer_t tokenizer;
   tokenizer_t* t = NULL;
   return_value_if_fail(fs != NULL && name != NULL, RET_BAD_PARAMS);
   t = tokenizer_init(&tokenizer, name, strlen(name), "/\\");
   return_value_if_fail(t != NULL, RET_BAD_PARAMS);
+
   while (tokenizer_has_more(t)) {
     tokenizer_next(t);
-    tk_strncpy(path, name, tk_min(MAX_PATH, t->cursor));
+
+    len = tk_min(MAX_PATH, t->cursor);
+    tk_strncpy(path, name, len);
+
+    if (len > 0) {
+      if (path[len - 1] == '/' || path[len - 1] == '\\') {
+        path[len - 1] = '\0';
+      }
+    }
+
     if (!fs_dir_exist(fs, path)) {
-      fs_create_dir(fs, path);
+      if (fs_create_dir(fs, path) != RET_OK) {
+        log_debug("create %s failed\n", path);
+        break;
+      }
     }
   }
   tokenizer_deinit(t);
@@ -519,4 +541,132 @@ ret_t fs_remove_dir_r(fs_t* fs, const char* name) {
   ret = fs_remove_dir(fs, name);
 
   return ret;
+}
+
+#ifndef TK_COPY_BUFF_SIZE
+#define TK_COPY_BUFF_SIZE 4096
+#endif /*TK_COPY_BUFF_SIZE*/
+
+static ret_t fs_copy_file_fd(fs_file_t* fsrc, fs_file_t* fdst) {
+  int32_t r = 0;
+  ret_t ret = RET_OK;
+  uint8_t* buff = TKMEM_ALLOC(TK_COPY_BUFF_SIZE + 1);
+
+  return_value_if_fail(buff != NULL, RET_OOM);
+  while ((r = fs_file_read(fsrc, buff, TK_COPY_BUFF_SIZE)) > 0) {
+    buff[r] = '\0';
+    if (fs_file_write(fdst, buff, r) < r) {
+      log_debug("write file failed\n");
+      ret = RET_IO;
+      break;
+    }
+  }
+  TKMEM_FREE(buff);
+
+  return ret;
+}
+
+ret_t fs_copy_file(fs_t* fs, const char* src, const char* dst) {
+  ret_t ret = RET_FAIL;
+  fs_file_t* fsrc = NULL;
+  fs_file_t* fdst = NULL;
+  char dirname[MAX_PATH + 1];
+  return_value_if_fail(fs != NULL && src != NULL && dst != NULL, RET_BAD_PARAMS);
+  return_value_if_fail(file_exist(src), RET_BAD_PARAMS);
+
+  path_dirname(dst, dirname, MAX_PATH);
+  if (!dir_exist(dirname)) {
+    return_value_if_fail(fs_create_dir_r(fs, dirname) == RET_OK, RET_IO);
+  }
+
+  fdst = fs_open_file(fs, dst, "wb+");
+  return_value_if_fail(fdst != NULL, RET_IO);
+
+  fsrc = fs_open_file(fs, src, "rb");
+  if (fsrc != NULL) {
+    ret = fs_copy_file_fd(fsrc, fdst);
+    fs_file_close(fsrc);
+  }
+  fs_file_close(fdst);
+
+  return ret;
+}
+
+static ret_t fs_copy_item(fs_t* fs, fs_item_t* item, const char* src, const char* dst) {
+  char subsrc[MAX_PATH + 1];
+  char subdst[MAX_PATH + 1];
+  path_build(subsrc, MAX_PATH, src, item->name, NULL);
+  path_build(subdst, MAX_PATH, dst, item->name, NULL);
+
+  if (!fs_dir_exist(fs, dst)) {
+    return_value_if_fail(fs_create_dir_r(fs, dst) == RET_OK, RET_IO);
+  }
+
+  log_debug("%s ==> %s\n", subsrc, subdst);
+  if (item->is_dir) {
+    return fs_copy_dir(fs, subsrc, subdst);
+  } else {
+    return fs_copy_file(fs, subsrc, subdst);
+  }
+}
+
+ret_t fs_copy_dir(fs_t* fs, const char* src, const char* dst) {
+  fs_item_t item;
+  ret_t ret = RET_OK;
+  fs_dir_t* dir = NULL;
+  return_value_if_fail(fs != NULL && src != NULL && dst != NULL, RET_BAD_PARAMS);
+  return_value_if_fail(fs_dir_exist(fs, src), RET_BAD_PARAMS);
+
+  if (!fs_dir_exist(fs, dst)) {
+    return_value_if_fail(fs_create_dir_r(fs, dst) == RET_OK, RET_IO);
+  }
+
+  dir = fs_open_dir(fs, src);
+  return_value_if_fail(dir != NULL, RET_BAD_PARAMS);
+  do {
+    if (fs_dir_read(dir, &item) != RET_OK) {
+      break;
+    }
+
+    if (tk_str_eq(item.name, ".") || tk_str_eq(item.name, "..")) {
+      continue;
+    } else {
+      ret = fs_copy_item(fs, &item, src, dst);
+    }
+
+    if (ret != RET_OK) {
+      break;
+    }
+  } while (TRUE);
+  fs_dir_close(dir);
+
+  return ret;
+}
+
+ret_t fs_foreach_file(const char* path, tk_visit_t on_file, void* ctx) {
+  fs_item_t item;
+  fs_t* fs = os_fs();
+  fs_dir_t* dir = NULL;
+  char filename[MAX_PATH + 1];
+  return_value_if_fail(fs != NULL && path != NULL && on_file != NULL, RET_BAD_PARAMS);
+
+  dir = fs_open_dir(fs, path);
+  return_value_if_fail(dir != NULL, RET_BAD_PARAMS);
+  while (fs_dir_read(dir, &item) == RET_OK) {
+    if (tk_str_eq(item.name, ".") || tk_str_eq(item.name, "..")) {
+      continue;
+    }
+
+    path_build(filename, MAX_PATH, path, item.name, NULL);
+    if (item.is_reg_file) {
+      if (on_file(ctx, filename) != RET_OK) {
+        break;
+      }
+    } else if (item.is_dir) {
+      fs_foreach_file(filename, on_file, ctx);
+    }
+  }
+  fs_dir_close(dir);
+
+  return RET_OK;
 }

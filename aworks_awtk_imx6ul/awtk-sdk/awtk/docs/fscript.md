@@ -6,7 +6,7 @@ fscript 是一个极简的脚本引擎，借鉴了函数语言中一些思路，
 
 * 特色：
   * 小内存。最低开销小于 400 字节。
-  * 小巧。核心代码 1000 行，基本扩展函数 800 行。
+  * 小巧。核心代码 1500 行，基本扩展函数 800 行。
   * 灵活。支持多条语句、函数嵌套调用和变量定义。
   * 简单。熟悉任何一种编程语言的人，5 分钟内即可学会。
   * 强大。超过 60 个内置函数，支持类似 C 语言的条件语句、循环语句和注释方式，支持复杂的表达式，支持用 C 语言扩展函数。
@@ -18,8 +18,7 @@ fscript 是一个极简的脚本引擎，借鉴了函数语言中一些思路，
      10380       1580       1909          4          0      86893   fscript.o
 ```
 
-* 限制：
-  * 不支持函数定义。
+实际内存使用与场景有关，请参考 [内存需求评估](fscript_ram_req.md)
 
 ## 2. 示例
 
@@ -102,6 +101,8 @@ b = "abc"
 c = true
 ```
 
+> 备注：在 fscript 脚本中定义的全局变量在执行完一段脚本后不会被清空，因此使用这些变量前通常需要初始化。
+
 #### 变量名命名规则：
 
 * 以字母开头，后面可用数字、英文下划线和英文点。
@@ -138,13 +139,27 @@ while(a < 100) {
 }
 ```
 
+* global. 开头的变量为全局变量，可以在同一进程的多个脚本中共享数据(全局变量并非是好的做法，尽量避免使用)
+
+如：
+
+```
+global.count=400
+global.name="fscript"
+```
+
 ### 获取变量
 
 ```
-a
+abc
+get(abc)
 ```
 
-> 获取变量时，如果变量不存在，自动当成字符串处理。不希望当成字符串，可以加上$前缀。
+> * 获取变量时，如果变量不存在，自动当成字符串处理，并打印获取变量失败的警告。
+> * 如果不希望变量被当成字符串，可以加上$前缀，或者使用 get 函数。
+> * fscript 不支持将函数返回值当做变量名使用并通过英文点"."访问子变量，比如 array_create().size，此时会将 .size 当做字符串处理。
+>
+> 注意：fscript 不提倡直接使用变量名当做字符串，如需要如果使用字符串常量，请用双引号包起来。
 
 如：
 
@@ -166,6 +181,15 @@ result:true
 cost: 112 us
 ```
 
+判断一个变量是否有效，需要使用 get 函数：
+
+```
+print("abc is valid? ", value_is_valid(get(abc)))
+abc=123
+print("abc is valid? ", value_is_valid(get(abc)))
+print(get(abc) + 321)
+```
+
 ### 函数嵌套调用
 
 ```
@@ -173,7 +197,7 @@ print(join(",", 1, 2, 3))
 print(join(",",1,2,3,4), join(";",5,6,7,8))
 ```
 
-### 提前返回(return)
+### 提前返回 (return)
 
 ```
 var a = 1;
@@ -316,7 +340,7 @@ assert(condition, crash_if_fail) => void
 
 * crash\_if\_fail 可选。为 true 时，调用系统的 assert，否则只是打印警告。
 
-#### 示例
+##### 示例
 
 ```
 assert(1<2)
@@ -333,7 +357,7 @@ assert(1<2)
 eval(condition) => value
 ```
 
-#### 示例
+##### 示例
 
 ```
 eval("1+2")
@@ -350,10 +374,37 @@ eval("1+2")
 has_error() => bool
 ```
 
-#### 示例
+##### 示例
 
 ```
 print(has_error())
+```
+
+#### get_last_error
+> 获取前一个错误
+----------------------------
+
+##### 原型
+
+```
+get_last_error() => object | null
+```
+
+如果有错，返回对象，其成员如下：
+
+* message 错误消息
+* code 错误码
+* line 出错的行
+* col 出错的列
+
+没有错误，返回无效值。
+
+##### 示例
+
+```
+print(len())
+var error = get_last_error();
+print("XXX:", error.message, error.code, error.line, error.col);
 ```
 
 ####  clear_error
@@ -367,7 +418,7 @@ print(has_error())
 clear_error() => void
 ```
 
-#### 示例
+##### 示例
 
 ```
 clear_error()
@@ -384,7 +435,7 @@ clear_error()
 print(str,...) => void
 ```
 
-#### 示例
+##### 示例
 
 ```
 print("hello fscript")
@@ -410,7 +461,7 @@ print(join(",", a, b))
 set(var, value) => bool
 ```
 
-#### 示例
+##### 示例
 
 ```
 set(a, 1)
@@ -433,7 +484,7 @@ a=1
 unset(var) => void
 ```
 
-#### 示例
+##### 示例
 
 ```
 unset(a)
@@ -451,7 +502,7 @@ unset(a)
 int(var) => int32_t
 ```
 
-#### 示例
+##### 示例
 
 ```
 int("123")
@@ -469,7 +520,7 @@ int("123")
 i8(var) => int8_t
 ```
 
-#### 示例
+##### 示例
 
 ```
 i8("123")
@@ -487,7 +538,7 @@ i8("123")
 i16(var) => int16_t
 ```
 
-#### 示例
+##### 示例
 
 ```
 i16("123")
@@ -505,7 +556,7 @@ i16("123")
 i32(var) => int32_t
 ```
 
-#### 示例
+##### 示例
 
 ```
 i32("123")
@@ -523,7 +574,7 @@ i32("123")
 i64(var) => int64_t
 ```
 
-#### 示例
+##### 示例
 
 ```
 i64("123")
@@ -541,7 +592,7 @@ i64("123")
 u8(var) => uint8_t
 ```
 
-#### 示例
+##### 示例
 
 ```
 u8("123")
@@ -559,7 +610,7 @@ u8("123")
 u16(var) => value(uint16)
 ```
 
-#### 示例
+##### 示例
 
 ```
 u16("123")
@@ -577,7 +628,7 @@ u16("123")
 u32(var) => uint32_t
 ```
 
-#### 示例
+##### 示例
 
 ```
 u32("123")
@@ -595,7 +646,7 @@ u32("123")
 u64(var) => uint64_t
 ```
 
-#### 示例
+##### 示例
 
 ```
 u64("123")
@@ -613,7 +664,7 @@ u64("123")
 f32(var) => float
 ```
 
-#### 示例
+##### 示例
 
 ```
 f32("123")
@@ -629,7 +680,7 @@ f32("123")
 float(var) => double
 ```
 
-#### 示例
+##### 示例
 
 ```
 float("123")
@@ -648,7 +699,7 @@ str(var [,force_pointer_as_str]) => str
 
 > force\_pointer\_as\_str 如果输入参数是 POINTER 类型，是否将强制转换成字符串。
 
-#### 示例
+##### 示例
 
 ```
 str(int(123))
@@ -666,7 +717,7 @@ str(msg.payload, true)
 iformat(format, value) => str
 ```
 
-#### 示例
+##### 示例
 
 ```
 iformat("hello:%d", 123)
@@ -683,7 +734,7 @@ iformat("hello:%d", 123)
 fformat(format, value) => str
 ```
 
-#### 示例
+##### 示例
 
 ```
 fformat("hello:%lf", 123)
@@ -700,7 +751,7 @@ fformat("hello:%lf", 123)
 exec(cmd, arg) => bool
 ```
 
-#### 示例
+##### 示例
 
 ```
 exec("clear", "all")
@@ -722,7 +773,7 @@ exec("clear", "all")
 join(seperator, s1, s2, s3...) => str
 ```
 
-#### 示例
+##### 示例
 
 ```
 join(",", 1, 2, 3, "abc")
@@ -730,7 +781,7 @@ join(",", 1, 2, 3, "abc")
 
 #### one_of
 
-> 从字符串数组中取出第N个字符串
+> 从字符串数组中取出第 N 个字符串
 
 ----------------------------
 
@@ -739,9 +790,9 @@ join(",", 1, 2, 3, "abc")
 ```
 one_of(str_array, index, sep) => str
 ```
-> sep为分隔符，默认为英文分号(;)。
+> sep 为分隔符，默认为英文分号 (;)。
 
-#### 示例
+##### 示例
 
 ```
 one_of("aa;bb;cc", 0) # => aa
@@ -754,7 +805,7 @@ one_of("aa.bb.cc", 0, ".") # ==> aa
 
 #### len
 
-> 取字符串的长度。
+> 取字符串/数组的长度。
 
 ----------------------------
 
@@ -764,7 +815,7 @@ one_of("aa.bb.cc", 0, ".") # ==> aa
 len(str) => uint32_t
 ```
 
-#### 示例
+##### 示例
 
 ```
 len("abc")
@@ -782,7 +833,7 @@ len("abc")
 toupper(str) => str
 ```
 
-#### 示例
+##### 示例
 
 ```
 touppper("abc")
@@ -800,7 +851,7 @@ touppper("abc")
 tolower(str) => str
 ```
 
-#### 示例
+##### 示例
 
 ```
 tolower("ABC")
@@ -817,7 +868,7 @@ tolower("ABC")
 trim(str) => str
 ```
 
-#### 示例
+##### 示例
 
 ```
 trm("  abc  ")
@@ -834,7 +885,7 @@ trm("  abc  ")
 substr(str, from, len) => str
 ```
 
-#### 示例
+##### 示例
 
 ```
 substr("abcd", 1, 2)
@@ -851,7 +902,7 @@ substr("abcd", 1, 2)
 replace(str, old, new) => str
 ```
 
-#### 示例
+##### 示例
 
 ```
 replace("ab cd", "ab", "hello")
@@ -868,7 +919,7 @@ replace("ab cd", "ab", "hello")
 contains(str, substr) => bool
 ```
 
-#### 示例
+##### 示例
 
 ```
 contains("ab cd", "ab")
@@ -889,7 +940,7 @@ sum(n1,n2...)
 n1+n2
 ```
 
-#### 示例
+##### 示例
 
 ```
 print(sum(1, 2, 3))
@@ -908,7 +959,7 @@ sub(n1,n2)
 n1-n2
 ```
 
-#### 示例
+##### 示例
 
 ```
 print(sub(2, 1))
@@ -928,7 +979,7 @@ mul(n1,n2)
 n1*n2
 ```
 
-#### 示例
+##### 示例
 
 ```
 print(mul(2, 1))
@@ -948,7 +999,7 @@ div(n1,n2)
 n1/n2
 ```
 
-#### 示例
+##### 示例
 
 ```
 print(div(2, 1))
@@ -966,7 +1017,7 @@ print(2/1)
 n1%n2
 ```
 
-#### 示例
+##### 示例
 
 ```
 print(23%7)
@@ -984,7 +1035,7 @@ and(n1,n2)
 n1 && n2
 ```
 
-#### 示例
+##### 示例
 
 ```
 print(true && false)
@@ -1003,7 +1054,7 @@ or(n1,n2)
 n1 || n2
 ```
 
-#### 示例
+##### 示例
 
 ```
 print(a || b)
@@ -1021,7 +1072,7 @@ not(n1)
 !(n1)
 ```
 
-#### 示例
+##### 示例
 
 ```
 print(not(true))
@@ -1134,7 +1185,7 @@ random(min, max) => int
 round(v) => double
 ```
 
-#### 示例
+##### 示例
 
 ```
 round(4.5)
@@ -1151,7 +1202,7 @@ round(4.5)
 floor(v) => double
 ```
 
-#### 示例
+##### 示例
 
 ```
 floor(4.5)
@@ -1168,7 +1219,7 @@ floor(4.5)
 ceil(v) => double
 ```
 
-#### 示例
+##### 示例
 
 ```
 ceil(4.5) 
@@ -1185,7 +1236,7 @@ ceil(4.5)
 abs(a) => double
 ```
 
-#### 示例
+##### 示例
 
 ```
 abs(1)
@@ -1202,6 +1253,12 @@ abs(1)
 min(a, b) => double
 ```
 
+##### 示例
+
+```
+min(1, 2)
+```
+
 #### max 
 
 > max 函数。
@@ -1213,16 +1270,10 @@ min(a, b) => double
 max(a, b) => double
 ```
 
-#### 示例
+##### 示例
 
 ```
 max(1, 2) 
-```
-
-#### 示例
-
-```
-min(1, 2)
 ```
 
 #### clamp 
@@ -1236,7 +1287,7 @@ min(1, 2)
 clamp(a, min, max) => double
 ```
 
-#### 示例
+##### 示例
 
 ```
 clamp(2, 1, 3)
@@ -1279,7 +1330,55 @@ fscript_register_func("foo", func_foo);
 
 ```
 
-#### 5.1 定义私有函数
+#### 5.4 定义脚本函数
+
+* 函数定义
+
+```
+function foo1(v1, v2) {
+  return v1 + v2; 
+}
+assert(foo1(100, 200) == 300)
+```
+
+* 使用 var 定义局部变量。
+
+```
+function foo2(v1, v2) {
+  var v3 = v1 + v2; 
+  return v3
+}
+assert(foo2(100, 200) == 300)
+
+function foo3(v1, v2) {
+  var v3 = v1 + v2; 
+  if(v3 < 100) {
+    return true
+  } else {
+    return false
+  }
+}
+assert(foo3(10, 20))
+assert(!foo3(100, 200))
+```
+
+> 函数内的临时变量，无论在哪里定义，一旦定义，在该函数内都可以使用。
+
+```
+function foo4 (v1, v2) {
+  var v3 = v1 + v2;
+  if(v3 < 100) {
+    var name = "awtk";
+  } else {
+    var name = "react-awtk";
+  }
+
+  return name;
+}
+
+assert(foo4(10, 20) == 'awtk')
+assert(foo4(100, 200) == 'react-awtk')
+```
 
 ### 6. 性能测量与优化
 
@@ -1301,6 +1400,7 @@ runFScript 的第二个参数可以指定运行次数，方便测量某个函数
 
 ### 7. 扩展模块
 
+* [字符串扩展模块](fscript_str.md)
 * [位操作扩展模块](fscript_bits.md)
 * [数学扩展模块](fscript_math.md)
 * [CRC 扩展模块](fscript_crc.md)

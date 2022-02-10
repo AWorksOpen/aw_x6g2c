@@ -19,6 +19,7 @@
 
 #include "tkc/str.h"
 #include "tkc/object.h"
+#include "tkc/general_factory.h"
 
 BEGIN_C_DECLS
 
@@ -57,6 +58,58 @@ struct _fscript_func_call_t;
 typedef struct _fscript_func_call_t fscript_func_call_t;
 
 /**
+ * @class fscript_parser_error_t
+ * 
+ * 解析错误信息。
+ *
+ */
+typedef struct _fscript_parser_error_t {
+  /**
+   * @property {int} row
+   * @annotation ["readable"]
+   * 出现错误的代码行。
+   */
+  int row;
+  /**
+   * @property {int} col
+   * @annotation ["readable"]
+   * 出现错误的代码列。
+   */
+  int col;
+
+  /**
+   * @property {int} offset
+   * @annotation ["readable"]
+   * 出现错误的代码偏移。
+   */
+  int offset;
+
+  /**
+   * @property {char*} message
+   * @annotation ["readable"]
+   * 错误信息。
+   */
+  char* message;
+
+  /**
+   * @property {char*} token
+   * @annotation ["readable"]
+   * 当前的token。
+   */
+  char* token;
+} fscript_parser_error_t;
+
+/**
+ * @method fscript_parser_error_deinit
+ * 释放error对象中的资源。
+ *
+ * @param {fscript_parser_error_t*} error 解析错误信息。
+ *
+ * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
+ */
+ret_t fscript_parser_error_deinit(fscript_parser_error_t* error);
+
+/**
  * @class fscript_t
  * @annotation ["fake"]
  * 
@@ -72,11 +125,11 @@ typedef struct _fscript_t {
    */
   str_t str;
   /**
-   * @property {object_t*} obj
+   * @property {tk_object_t*} obj
    * @annotation ["readable"]
    * 脚本执行上下文。
    */
-  object_t* obj;
+  tk_object_t* obj;
   /**
    * @property {value_t*} fast_vars
    * @annotation ["readable"]
@@ -87,6 +140,8 @@ typedef struct _fscript_t {
   /*private*/
   ret_t error_code;
   char* error_message;
+  int32_t error_row;
+  int32_t error_col;
   fscript_func_call_t* curr;
   fscript_func_call_t* first;
   fscript_func_call_t* error_func;
@@ -94,6 +149,12 @@ typedef struct _fscript_t {
   bool_t continued;
   bool_t returned;
   uint8_t while_count;
+
+  /*函数局部变量和参数*/
+  tk_object_t* locals;
+  /*脚本定义的函数*/
+  tk_object_t* funcs_def;
+  char* code_id;
 } fscript_t;
 
 typedef ret_t (*fscript_func_t)(fscript_t* fscript, fscript_args_t* args, value_t* v);
@@ -101,12 +162,31 @@ typedef ret_t (*fscript_func_t)(fscript_t* fscript, fscript_args_t* args, value_
 /**
  * @method fscript_create
  * 创建引擎对象，并解析代码。
- * @param {object_t*} obj 脚本执行上下文。
+ * @param {tk_object_t*} obj 脚本执行上下文。
  * @param {const char*} script 脚本代码。
  *
  * @return {fscript_t*} 返回fscript对象。
  */
-fscript_t* fscript_create(object_t* obj, const char* script);
+fscript_t* fscript_create(tk_object_t* obj, const char* script);
+
+/**
+ * @method fscript_syntax_check
+ * 解析代码，分析是否有语法错误。
+ *
+ * 示例：
+ * ```c
+ * fscript_parser_error_t error;
+ * fscript_syntax_check(obj, "1+1", &error);
+ * fscript_parser_error_deinit(&error);
+ *```
+ *
+ * @param {tk_object_t*} obj 脚本执行上下文。
+ * @param {const char*} script 脚本代码。
+ * @param {fscript_parser_error_t*} error 用于返回错误信息。
+ *
+ * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
+ */
+ret_t fscript_syntax_check(tk_object_t* obj, const char* script, fscript_parser_error_t* error);
 
 /**
  * @method fscript_exec
@@ -142,13 +222,13 @@ ret_t fscript_destroy(fscript_t* fscript);
 /**
  * @method fscript_eval
  * 执行一段脚本。
- * @param {object_t*} obj 脚本执行上下文。
+ * @param {tk_object_t*} obj 脚本执行上下文。
  * @param {const char*} script 脚本代码。
  * @param {value_t*} result 执行结果(调用者需要用value_reset函数清除result)。
  *
  * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
  */
-ret_t fscript_eval(object_t* obj, const char* script, value_t* result);
+ret_t fscript_eval(tk_object_t* obj, const char* script, value_t* result);
 
 /**
  * @method fscript_global_init
@@ -169,6 +249,15 @@ ret_t fscript_global_init(void);
 ret_t fscript_register_func(const char* name, fscript_func_t func);
 
 /**
+ * @method fscript_register_funcs
+ * 注册全局自定义函数。
+ * @param {const general_factory_table_t*} table 函数表。
+ *
+ * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
+ */
+ret_t fscript_register_funcs(const general_factory_table_t* table);
+
+/**
  * @method fscript_global_deinit
  * 全局释放。
  *
@@ -186,14 +275,22 @@ ret_t fscript_global_deinit(void);
  */
 double tk_expr_eval(const char* expr);
 
+/**
+ * @method fscript_get_global_object
+ * 获取fscript的全局对象。
+ * 
+ * @return {tk_object_t*} 返回fscript的全局对象。
+ */
+tk_object_t* fscript_get_global_object(void);
+
 /*注册自定义函数时，属性名的前缀。*/
 #define STR_FSCRIPT_FUNCTION_PREFIX "function."
 
 /*用于扩展函数里检查参数*/
-#define FSCRIPT_FUNC_CHECK(predicate, code)                        \
-  if (!(predicate)) {                                              \
-    fscript_set_error(fscript, code, __FUNCTION__, "" #predicate); \
-    return code;                                                   \
+#define FSCRIPT_FUNC_CHECK(predicate, code)                                          \
+  if (!(predicate)) {                                                                \
+    fscript_set_error(fscript, code, __FUNCTION__, "" #predicate " not satisfied."); \
+    return code;                                                                     \
   }
 
 END_C_DECLS

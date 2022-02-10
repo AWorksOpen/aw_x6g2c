@@ -23,8 +23,9 @@
 #define TK_VG_CANVAS_H
 
 #include "tkc/rect.h"
-#include "base/types_def.h"
 #include "base/bitmap.h"
+#include "base/dirty_rects.h"
+#include "base/vg_gradient.h"
 
 BEGIN_C_DECLS
 
@@ -48,9 +49,10 @@ typedef struct _vgcanvas_t vgcanvas_t;
 
 typedef ret_t (*vgcanvas_reinit_t)(vgcanvas_t* vg, uint32_t w, uint32_t h, uint32_t stride,
                                    bitmap_format_t format, void* data);
-typedef ret_t (*vgcanvas_begin_frame_t)(vgcanvas_t* vg, const rect_t* dirty_rect);
+typedef ret_t (*vgcanvas_begin_frame_t)(vgcanvas_t* vg, const dirty_rects_t* dirty_rects);
 typedef ret_t (*vgcanvas_end_frame_t)(vgcanvas_t* vg);
 
+typedef ret_t (*vgcanvas_set_assets_manager_t)(vgcanvas_t* vg, assets_manager_t* assets_manager);
 typedef ret_t (*vgcanvas_reset_t)(vgcanvas_t* vg);
 typedef ret_t (*vgcanvas_flush_t)(vgcanvas_t* vg);
 typedef ret_t (*vgcanvas_reset_curr_state_t)(vgcanvas_t* vg);
@@ -82,6 +84,10 @@ typedef ret_t (*vgcanvas_transform_t)(vgcanvas_t* vg, float_t a, float_t b, floa
 typedef ret_t (*vgcanvas_set_transform_t)(vgcanvas_t* vg, float_t a, float_t b, float_t c,
                                           float_t d, float_t e, float_t f);
 
+typedef ret_t (*vgcanvas_clip_path_t)(vgcanvas_t* vg);
+typedef const rectf_t* (*vgcanvas_get_clip_rect_t)(vgcanvas_t* vg);
+typedef bool_t (*vgcanvas_is_rectf_in_clip_rect_t)(vgcanvas_t* vg, float_t left, float_t top,
+                                                   float_t right, float_t bottom);
 typedef ret_t (*vgcanvas_clip_rect_t)(vgcanvas_t* vg, float_t x, float_t y, float_t w, float_t h);
 typedef ret_t (*vgcanvas_nanovg_intersect_clip_rect_t)(vgcanvas_t* vg, float_t* x, float_t* y,
                                                        float_t* w, float_t* h);
@@ -102,10 +108,18 @@ typedef ret_t (*vgcanvas_draw_image_t)(vgcanvas_t* vg, bitmap_t* img, float_t sx
                                        float_t sw, float_t sh, float_t dx, float_t dy, float_t dw,
                                        float_t dh);
 
+typedef ret_t (*vgcanvas_draw_image_repeat_t)(vgcanvas_t* vg, bitmap_t* img, float_t sx, float_t sy,
+                                              float_t sw, float_t sh, float_t dx, float_t dy,
+                                              float_t dw, float_t dh, float_t dst_w, float_t dst_h);
+
 typedef ret_t (*vgcanvas_set_antialias_t)(vgcanvas_t* vg, bool_t value);
 typedef ret_t (*vgcanvas_set_global_alpha_t)(vgcanvas_t* vg, float_t alpha);
 typedef ret_t (*vgcanvas_set_line_width_t)(vgcanvas_t* vg, float_t value);
 typedef ret_t (*vgcanvas_set_fill_color_t)(vgcanvas_t* vg, color_t color);
+typedef ret_t (*vgcanvas_set_stroke_color_t)(vgcanvas_t* vg, color_t color);
+
+typedef ret_t (*vgcanvas_set_fill_gradient_t)(vgcanvas_t* vg, const vg_gradient_t* gradient);
+typedef ret_t (*vgcanvas_set_stroke_gradient_t)(vgcanvas_t* vg, const vg_gradient_t* gradient);
 
 typedef ret_t (*vgcanvas_set_fill_linear_gradient_t)(vgcanvas_t* vg, float_t sx, float_t sy,
                                                      float_t ex, float_t ey, color_t icolor,
@@ -114,7 +128,6 @@ typedef ret_t (*vgcanvas_set_fill_radial_gradient_t)(vgcanvas_t* vg, float_t cx,
                                                      float_t inr, float_t outr, color_t icolor,
                                                      color_t ocolor);
 
-typedef ret_t (*vgcanvas_set_stroke_color_t)(vgcanvas_t* vg, color_t color);
 typedef ret_t (*vgcanvas_set_stroke_linear_gradient_t)(vgcanvas_t* vg, float_t sx, float_t sy,
                                                        float_t ex, float_t ey, color_t icolor,
                                                        color_t ocolor);
@@ -148,6 +161,7 @@ typedef struct _vgcanvas_vtable_t {
   vgcanvas_reinit_t reinit;
 
   vgcanvas_begin_frame_t begin_frame;
+  vgcanvas_set_assets_manager_t set_assets_manager;
   vgcanvas_reset_t reset;
   vgcanvas_flush_t flush;
   vgcanvas_clear_rect_t clear_rect;
@@ -172,7 +186,10 @@ typedef struct _vgcanvas_vtable_t {
   vgcanvas_transform_t transform;
   vgcanvas_set_transform_t set_transform;
 
+  vgcanvas_clip_path_t clip_path;
   vgcanvas_clip_rect_t clip_rect;
+  vgcanvas_get_clip_rect_t get_clip_rect;
+  vgcanvas_is_rectf_in_clip_rect_t is_rectf_in_clip_rect;
   vgcanvas_nanovg_intersect_clip_rect_t intersect_clip_rect;
   vgcanvas_fill_t fill;
   vgcanvas_stroke_t stroke;
@@ -186,6 +203,7 @@ typedef struct _vgcanvas_vtable_t {
   vgcanvas_fill_text_t fill_text;
   vgcanvas_measure_text_t measure_text;
   vgcanvas_draw_image_t draw_image;
+  vgcanvas_draw_image_repeat_t draw_image_repeat;
 
   vgcanvas_set_antialias_t set_antialias;
   vgcanvas_set_global_alpha_t set_global_alpha;
@@ -196,6 +214,8 @@ typedef struct _vgcanvas_vtable_t {
   vgcanvas_set_stroke_color_t set_stroke_color;
   vgcanvas_set_stroke_linear_gradient_t set_stroke_linear_gradient;
   vgcanvas_set_stroke_radial_gradient_t set_stroke_radial_gradient;
+  vgcanvas_set_fill_gradient_t set_fill_gradient;
+  vgcanvas_set_stroke_gradient_t set_stroke_gradient;
   vgcanvas_set_line_join_t set_line_join;
   vgcanvas_set_line_cap_t set_line_cap;
   vgcanvas_set_miter_limit_t set_miter_limit;
@@ -383,7 +403,7 @@ struct _vgcanvas_t {
    * frame buffer format
    */
   bitmap_format_t format;
-  rect_t clip_rect;
+  rectf_t clip_rect;
   rect_t dirty_rect;
   const vgcanvas_vtable_t* vt;
   assets_manager_t* assets_manager;
@@ -466,11 +486,11 @@ ret_t vgcanvas_flush(vgcanvas_t* vg);
  * 开始绘制，系统内部调用。
  *
  * @param {vgcanvas_t*} vg vgcanvas对象。
- * @param {const rect_t*} dirty_rect 需要绘制的区域。
+ * @param {const dirty_rects_t*} dirty_rects 需要绘制的区域。
  *
  * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
  */
-ret_t vgcanvas_begin_frame(vgcanvas_t* vg, const rect_t* dirty_rect);
+ret_t vgcanvas_begin_frame(vgcanvas_t* vg, const dirty_rects_t* dirty_rects);
 
 /**
  * @method vgcanvas_clear_rect
@@ -751,6 +771,16 @@ ret_t vgcanvas_transform(vgcanvas_t* vg, float_t a, float_t b, float_t c, float_
  */
 ret_t vgcanvas_set_transform(vgcanvas_t* vg, float_t a, float_t b, float_t c, float_t d, float_t e,
                              float_t f);
+/**
+ * @method vgcanvas_clip_path
+ * 使用当前的path裁剪。
+ *>目前只有部分backend支持(如cairo)。
+ * @annotation ["scriptable"]
+ * @param {vgcanvas_t*} vg vgcanvas对象。
+ *
+ * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
+ */
+ret_t vgcanvas_clip_path(vgcanvas_t* vg);
 
 /**
  * @method vgcanvas_clip_rect
@@ -766,6 +796,32 @@ ret_t vgcanvas_set_transform(vgcanvas_t* vg, float_t a, float_t b, float_t c, fl
  * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
  */
 ret_t vgcanvas_clip_rect(vgcanvas_t* vg, float_t x, float_t y, float_t w, float_t h);
+
+/**
+ * @method vgcanvas_get_clip_rect
+ * 获取矩形裁剪。
+ *
+ * @param {vgcanvas_t*} vg vgcanvas对象。
+ *
+ * @return {const rectf_t*} 返回裁剪区。
+ */
+const rectf_t* vgcanvas_get_clip_rect(vgcanvas_t* vg);
+
+/**
+ * @method vgcanvas_is_rectf_in_clip_rect
+ * 矩形区域是否在矩形裁剪中。
+ *
+ * @annotation ["scriptable"]
+ * @param {vgcanvas_t*} vg vgcanvas对象。
+ * @param {float_t} left 矩形区域左边。
+ * @param {float_t} top 矩形区域上边。
+ * @param {float_t} right 矩形区域右边。
+ * @param {float_t} bottom 矩形区域下边。
+ *
+ * @return {bool_t} 返回 TURE 则在区域中，返回 FALSE 则不在区域中。
+ */
+bool_t vgcanvas_is_rectf_in_clip_rect(vgcanvas_t* vg, float_t left, float_t top, float_t right,
+                                      float_t bottom);
 
 /**
  * @method vgcanvas_intersect_clip_rect
@@ -942,6 +998,34 @@ ret_t vgcanvas_draw_image(vgcanvas_t* vg, bitmap_t* img, float_t sx, float_t sy,
                           float_t sh, float_t dx, float_t dy, float_t dw, float_t dh);
 
 /**
+ * @method vgcanvas_draw_image_repeat
+ * 绘制图片。
+ * 
+ * 备注：
+ * 当绘制区域大于原图区域时，多余的绘制区域会重复绘制原图区域的东西。（绘制图区按照绘制图片的宽高来绘制的）
+ * 当绘制图片的宽高和原图的不同，在重复绘制的同时加入缩放。
+ *
+ * @annotation ["scriptable"]
+ * @param {vgcanvas_t*} vg vgcanvas对象。
+ * @param {bitmap_t*} img 图片。
+ * @param {float_t} sx 原图区域的 x
+ * @param {float_t} sy 原图区域的 y
+ * @param {float_t} sw 原图区域的 w
+ * @param {float_t} sh 原图区域的 h
+ * @param {float_t} dx 绘制区域的 x
+ * @param {float_t} dy 绘制区域的 y
+ * @param {float_t} dw 绘制区域的 w
+ * @param {float_t} dh 绘制区域的 h
+ * @param {float_t} dst_w 绘制图片的宽
+ * @param {float_t} dst_h 绘制图片的高
+ *
+ * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
+ */
+ret_t vgcanvas_draw_image_repeat(vgcanvas_t* vg, bitmap_t* img, float_t sx, float_t sy, float_t sw,
+                                 float_t sh, float_t dx, float_t dy, float_t dw, float_t dh,
+                                 float_t dst_w, float_t dst_h);
+
+/**
  * @method vgcanvas_draw_icon
  * 绘制图标。
  *
@@ -1022,6 +1106,30 @@ ret_t vgcanvas_set_fill_color(vgcanvas_t* vg, color_t color);
  * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
  */
 ret_t vgcanvas_set_fill_color_str(vgcanvas_t* vg, const char* color);
+
+/**
+ * @method vgcanvas_set_fill_gradient
+ * 设置填充颜色为渐变色。
+ *
+ *>目前只有部分backend支持(如cairo)。
+ * @param {vgcanvas_t*} vg vgcanvas对象。
+ * @param {vg_gradient_t*} gradient gradient对象。
+ *
+ * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
+ */
+ret_t vgcanvas_set_fill_gradient(vgcanvas_t* vg, const vg_gradient_t* gradient);
+
+/**
+ * @method vgcanvas_set_stroke_gradient
+ * 设置线条颜色为渐变色。
+ *
+ *>目前只有部分backend支持(如cairo)。
+ * @param {vgcanvas_t*} vg vgcanvas对象。
+ * @param {vg_gradient_t*} gradient gradient对象。
+ *
+ * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
+ */
+ret_t vgcanvas_set_stroke_gradient(vgcanvas_t* vg, const vg_gradient_t* gradient);
 
 /**
  * @method vgcanvas_set_fill_linear_gradient

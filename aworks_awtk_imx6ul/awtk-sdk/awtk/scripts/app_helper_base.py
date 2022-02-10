@@ -3,9 +3,16 @@ import sys
 import json
 import shutil
 import platform
+from SCons import Script
 
 PLATFORM = platform.system()
 
+def getTkcOnly():
+    env = os.environ
+    if 'TKC_ONLY' in env:
+        return env['TKC_ONLY'] == 'True'
+    else:
+        return False
 
 def join_path(root, sub):
     return os.path.abspath(os.path.join(root, sub))
@@ -137,6 +144,12 @@ class AppHelperBase:
             self.APP_CCFLAGS += APP_CCFLAGS
         return self
 
+    def use_std_cxx(self, VERSION):
+      if platform.system() == 'Windows':
+        self.APP_CXXFLAGS += ' /std:c++'+str(VERSION)+' '
+      else:
+        self.APP_CXXFLAGS += ' -std=c++'+str(VERSION)+' '
+
     def add_cxxflags(self, APP_CXXFLAGS):
         self.APP_CXXFLAGS += APP_CXXFLAGS
         return self
@@ -154,35 +167,50 @@ class AppHelperBase:
         if plat == PLATFORM:
             self.APP_LINKFLAGS += APP_LINKFLAGS
         return self
+        
+    def SConscript(self, SConscriptFiles):
+        if not self.BUILD_DIR:
+            Script.SConscript(SConscriptFiles)
+        else:
+            for sc in SConscriptFiles:
+                dir = os.path.dirname(sc)
+                build_dir = os.path.join(self.BUILD_DIR, dir)
+                Script.SConscript(sc, variant_dir=build_dir, duplicate=False)
 
     def __init__(self, ARGUMENTS):
         APP_ROOT = os.path.normpath(os.getcwd())
 
         self.SRC_DIR = 'src'
-        self.TKC_ONLY = False
+        self.TKC_ONLY = getTkcOnly();
         self.ARGUMENTS = ARGUMENTS
         self.DEF_FILE = None
         self.DEF_FILE_PROCESSOR = None
         self.DEPENDS_LIBS = []
         self.GEN_IDL_DEF = True
         self.BUILD_SHARED = True
-        self.LINUX_FB = ARGUMENTS.get('LINUX_FB', '') != ''
+        self.LINUX_FB = ARGUMENTS.get('LINUX_FB', '') == 'true'
         self.AWTK_ROOT = self.getAwtkRoot()
         self.awtk = self.getAwtkConfig()
         self.AWTK_LIBS = self.awtk.LIBS
         self.AWTK_CFLAGS = self.awtk.CFLAGS
         self.AWTK_CCFLAGS = self.awtk.CCFLAGS
         self.APP_ROOT = APP_ROOT
-        self.APP_BIN_DIR = os.path.join(APP_ROOT, 'bin')
-        self.APP_LIB_DIR = os.path.join(APP_ROOT, 'lib')
+        self.BUILD_DIR = ARGUMENTS.get('BUILD_DIR', '')
+        self.BIN_DIR = os.path.join(self.BUILD_DIR, 'bin')
+        self.LIB_DIR = os.path.join(self.BUILD_DIR, 'lib')
+        self.APP_BIN_DIR = os.path.join(APP_ROOT, self.BIN_DIR)
+        self.APP_LIB_DIR = os.path.join(APP_ROOT, self.LIB_DIR)
         self.APP_SRC = os.path.join(APP_ROOT, 'src')
         self.APP_RES = os.path.join(APP_ROOT, 'res')
         self.APP_LIBS = []
-        self.APP_LIBPATH = [self.APP_LIB_DIR]
+        self.APP_LIBPATH = [self.APP_LIB_DIR, self.APP_BIN_DIR]
         self.APP_LINKFLAGS = ''
         self.APP_CPPPATH = [self.APP_SRC, self.APP_RES]
         self.PLATFORM_LIBS = []
         self.APP_TOOLS = None
+        self.WITH_JERRYSCRIPT = False
+        self.MVVM_ROOT = None
+        self.AWFLOW_ROOT = None
 
         mkdir_if_not_exist(self.APP_BIN_DIR)
         mkdir_if_not_exist(self.APP_LIB_DIR)
@@ -192,12 +220,35 @@ class AppHelperBase:
         os.environ['BIN_DIR'] = self.APP_BIN_DIR
         os.environ['LIB_DIR'] = self.APP_LIB_DIR
         os.environ['LINUX_FB'] = 'false'
+        os.environ['BUILD_DIR'] = self.BUILD_DIR
         if self.LINUX_FB:
             os.environ['LINUX_FB'] = 'true'
 
+        self.WITH_JERRYSCRIPT = ARGUMENTS.get('WITH_JERRYSCRIPT', '').lower().startswith('t')
+
+        WITH_MVVM = ARGUMENTS.get('WITH_MVVM', '').lower().startswith('t')
+        MVVM_ROOT = ARGUMENTS.get('MVVM_ROOT', '')
+        if WITH_MVVM or os.path.exists(MVVM_ROOT):
+            os.environ['WITH_MVVM'] = 'true'
+            if not os.path.exists(MVVM_ROOT):
+                MVVM_ROOT = self.getMvvmRoot()
+            self.MVVM_ROOT = MVVM_ROOT
+            print("MVVM_ROOT: " + self.MVVM_ROOT)
+
+        WITH_AWFLOW = ARGUMENTS.get('WITH_AWFLOW', '').lower().startswith('t')
+        AWFLOW_ROOT = ARGUMENTS.get('AWFLOW_ROOT', '')
+        print(WITH_AWFLOW)
+        if WITH_AWFLOW or os.path.exists(AWFLOW_ROOT):
+            os.environ['WITH_AWFLOW'] = 'true'
+            if not os.path.exists(AWFLOW_ROOT):
+                AWFLOW_ROOT = self.getAwflowRoot()
+            self.AWFLOW_ROOT = AWFLOW_ROOT
+            print("AWFLOW_ROOT: " + self.AWFLOW_ROOT)
+
         self.parseArgs(self.awtk, ARGUMENTS)
 
-        print("AWTK_ROOT:" + self.AWTK_ROOT)
+        print("AWTK_ROOT: " + self.AWTK_ROOT)
+        print("TKC_ONLY: " + str(self.TKC_ONLY))
         print(ARGUMENTS)
 
     def getAwtkConfig(self):
@@ -239,7 +290,7 @@ class AppHelperBase:
                 f.write(content)
 
     def isBuildShared(self):
-        return 'WITH_AWTK_SO' in os.environ and os.environ['WITH_AWTK_SO'] == 'true' and self.BUILD_SHARED
+        return self.BUILD_SHARED
 
     def copyAwtkSharedLib(self):
         if self.TKC_ONLY:
@@ -249,7 +300,8 @@ class AppHelperBase:
 
         for iter in self.DEPENDS_LIBS:
             for so in iter['shared_libs']:
-                self.awtk.copySharedLib(iter['root'], self.APP_BIN_DIR, so)
+                src = os.path.join(iter['root'], self.BUILD_DIR)
+                self.awtk.copySharedLib(src, self.APP_BIN_DIR, so)
 
     def genIdlAndDef(self):
         if self.DEF_FILE:
@@ -281,6 +333,7 @@ class AppHelperBase:
         print('  THEME="default"')
         print('  SHARED=true')
         print('  LINUX_FB=false')
+        print('  BUILD_DIR=arm')
         sys.exit(0)
 
     def parseArgs(self, awtk, ARGUMENTS):
@@ -384,9 +437,16 @@ class AppHelperBase:
     def getAwtkRoot(self):
         AWTK_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         if self.LINUX_FB:
-            AWTK_ROOT = os.path.join(
-                os.path.dirname(AWTK_ROOT), 'awtk-linux-fb')
+            AWTK_ROOT = os.path.join(os.path.dirname(AWTK_ROOT), 'awtk-linux-fb')
         return AWTK_ROOT
+
+    def getMvvmRoot(self):
+        MVVM_ROOT = os.path.join(os.path.dirname(self.getAwtkRoot()), 'awtk-mvvm')
+        return MVVM_ROOT
+
+    def getAwflowRoot(self):
+        AWFLOW_ROOT = os.path.join(os.path.dirname(self.getAwtkRoot()), 'aw-flow')
+        return AWFLOW_ROOT
 
     def call(self, DefaultEnvironment):
         awtk = self.awtk
@@ -399,6 +459,52 @@ class AppHelperBase:
         TARGET_ARCH = awtk.TARGET_ARCH
         APP_TOOLS = self.APP_TOOLS
         CXXFLAGS = self.APP_CXXFLAGS
+        DEPENDS_LIBS = []
+
+        if self.MVVM_ROOT:
+            if self.WITH_JERRYSCRIPT:
+                MVVM_3RD_ROOT = join_path(self.MVVM_ROOT, '3rd')
+                DEPENDS_LIBS += [{
+                    'cxxflags': '-DWITH_MVVM -DWITH_JERRYSCRIPT',
+                    'cflags': '-DWITH_MVVM -DWITH_JERRYSCRIPT',
+                    'ccflags': '-DWITH_MVVM -DWITH_JERRYSCRIPT',
+                    'root' : self.MVVM_ROOT,
+                    'shared_libs': ['mvvm'],
+                    'static_libs': ['']
+                }]
+                CPPPATH += [
+                    join_path(MVVM_3RD_ROOT, 'jerryscript/jerryscript/jerry-ext/include'),
+                    join_path(MVVM_3RD_ROOT, 'jerryscript/jerryscript/jerry-core/include'),
+                ]
+            else:
+                DEPENDS_LIBS += [{
+                    'cxxflags': '-DWITH_MVVM',
+                    'cflags': '-DWITH_MVVM',
+                    'ccflags': '-DWITH_MVVM',
+                    'root' : self.MVVM_ROOT,
+                    'shared_libs': ['mvvm'],
+                    'static_libs': []
+                }]
+
+        if self.AWFLOW_ROOT:
+            DEPENDS_LIBS += [{
+                'cxxflags': '-DWITH_AWFLOW',
+                'cflags': '-DWITH_AWFLOW',
+                'ccflags': '-DWITH_AWFLOW',
+                'root' : self.AWFLOW_ROOT,
+                'shared_libs': ['awflow'],
+                'static_libs': []
+            }]
+
+            if self.isBuildShared():
+                src = join_path(self.AWFLOW_ROOT, 'bin/nodes')
+                dst = join_path(self.APP_ROOT, 'bin/nodes')
+                if os.path.exists(dst):
+                    shutil.rmtree(dst)
+                print(src + '==>' + dst)
+                shutil.copytree(src, dst)
+
+        self.DEPENDS_LIBS = DEPENDS_LIBS + self.DEPENDS_LIBS
 
         if self.TKC_ONLY:
             CCFLAGS += ' -DTKC_ONLY=1 '
@@ -427,13 +533,13 @@ class AppHelperBase:
                 for f in iter['libpath']:
                     LIBPATH = LIBPATH + [join_path(iter['root'], f)]
             else:
-                LIBPATH += [join_path(iter['root'], 'lib')]
-                LIBPATH += [join_path(iter['root'], 'bin')]
+                if self.isBuildShared():
+                    LIBPATH += [join_path(iter['root'], self.BIN_DIR)]
+                LIBPATH += [join_path(iter['root'], self.LIB_DIR)]
         LIBS = self.APP_LIBS + LIBS
 
-        self.prepare()
         if hasattr(awtk, 'CC'):
-            DefaultEnvironment(
+            env = DefaultEnvironment(
                 CC=awtk.CC,
                 CXX=awtk.CXX,
                 LD=awtk.LD,
@@ -452,7 +558,7 @@ class AppHelperBase:
                 OS_SUBSYSTEM_CONSOLE=awtk.OS_SUBSYSTEM_CONSOLE,
                 OS_SUBSYSTEM_WINDOWS=awtk.OS_SUBSYSTEM_WINDOWS)
         else:
-            DefaultEnvironment(
+            env = DefaultEnvironment(
                 TOOLS=APP_TOOLS,
                 CPPPATH=CPPPATH,
                 LINKFLAGS=LINKFLAGS,
@@ -464,3 +570,10 @@ class AppHelperBase:
                 TARGET_ARCH=awtk.TARGET_ARCH,
                 OS_SUBSYSTEM_CONSOLE=awtk.OS_SUBSYSTEM_CONSOLE,
                 OS_SUBSYSTEM_WINDOWS=awtk.OS_SUBSYSTEM_WINDOWS)
+        
+        def variant_SConscript(env, SConscriptFiles):
+            self.SConscript(SConscriptFiles)
+        env.AddMethod(variant_SConscript, "SConscript")
+    
+        self.prepare()
+        return env

@@ -39,12 +39,9 @@
 typedef struct _fb_info_t {
   int fd;
   uint8_t* fbmem0;
-  uint8_t* fbmem1;
+  uint8_t* fbmem_offline;
   struct fb_fix_screeninfo fix;
   struct fb_var_screeninfo var;
-
-  /*for swappable draw snapshot*/
-  uint8_t* offline_fb;
 } fb_info_t;
 
 #define fb_width(fb) ((fb)->var.xres)
@@ -54,10 +51,10 @@ typedef struct _fb_info_t {
 #define fb_line_length(fb) ((fb)->fix.line_length)
 #define fb_size(fb) ((fb)->var.yres * (fb)->fix.line_length)
 #define fb_vsize(fb) ((fb)->var.yres_virtual * (fb)->fix.line_length)
-#define fb_number(fb) (fb_memsize(fb) / fb_size(fb))
+#define fb_number(fb) (fb_vsize(fb) / fb_size(fb))
 
 #define fb_is_1fb(fb) ((fb)->var.yres_virtual < 2 * (fb)->var.yres)
-#define fb_is_2fb(fb) (fb_memsize(fb) / fb_size(fb) >= 2)
+#define fb_is_2fb(fb) (fb_vsize(fb) / fb_size(fb) >= 2)
 #define fb_is_3fb(fb) 0  //((fb)->var.yres_virtual == 3 * (fb)->var.yres)
 
 static inline bool_t fb_is_bgra5551(fb_info_t* fb) {
@@ -107,6 +104,28 @@ static inline bool_t fb_is_rgba8888(fb_info_t* fb) {
 static inline bool_t fb_is_bgra8888(fb_info_t* fb) {
   struct fb_var_screeninfo* var = &(fb->var);
   if (var->bits_per_pixel == 32 && var->blue.offset == 0 && var->green.offset == 8 &&
+      var->red.offset == 16 && var->red.length == 8 && var->green.length == 8 &&
+      var->blue.length == 8) {
+    return TRUE;
+  } else {
+    return FALSE;
+  }
+}
+
+static inline bool_t fb_is_rgb888(fb_info_t* fb) {
+  struct fb_var_screeninfo* var = &(fb->var);
+  if (var->bits_per_pixel == 24 && var->red.offset == 0 && var->green.offset == 8 &&
+      var->blue.offset == 16 && var->red.length == 8 && var->green.length == 8 &&
+      var->blue.length == 8) {
+    return TRUE;
+  } else {
+    return FALSE;
+  }
+}
+
+static inline bool_t fb_is_bgr888(fb_info_t* fb) {
+  struct fb_var_screeninfo* var = &(fb->var);
+  if (var->bits_per_pixel == 24 && var->blue.offset == 0 && var->green.offset == 8 &&
       var->red.offset == 16 && var->red.length == 8 && var->green.length == 8 &&
       var->blue.length == 8) {
     return TRUE;
@@ -167,14 +186,12 @@ static inline int fb_open(fb_info_t* fb, const char* filename) {
   }
 
   log_info("fb_open clear\n");
-  memset(fb->fbmem0, 0xff, total_size);
-  if (fb_is_2fb(fb)) {
-    fb->fbmem1 = fb->fbmem0 + size;
-  } else {
-    fb->fbmem1 = NULL;
-  }
-  log_info("fb_open ok\n");
+  //memset(fb->fbmem0, 0xff, total_size);
 
+  fb->fbmem_offline = (uint8_t*)malloc(size);
+  assert(fb->fbmem_offline);
+
+  log_info("fb_open ok\n");
   return 0;
 fail:
   perror("framebuffer");
@@ -189,14 +206,8 @@ static inline void fb_close(fb_info_t* fb) {
     uint32_t total_size = fb_memsize(fb);
 
     log_info("fb_close\n");
-    if (fb_is_1fb(fb)) {
-      if (fb->fbmem1 != NULL) {
-        free(fb->fbmem1);
-      }
-    }
-
-    if (fb->offline_fb != NULL) {
-      free(fb->offline_fb);
+    if (fb->fbmem_offline != NULL) {
+      free(fb->fbmem_offline);
     }
 
     munmap(fb->fbmem0, total_size);
@@ -217,6 +228,38 @@ static inline void fb_sync(fb_info_t* info) {
   }
 
   return;
+}
+
+static inline ret_t fb_resize_reopen(fb_info_t* fb, wh_t w, wh_t h) {
+  struct fb_var_screeninfo var_set;
+  uint32_t fb_num = fb_number(fb);
+  uint32_t total_size = fb_memsize(fb);
+
+	ioctl(fb->fd, FBIOGET_VSCREENINFO, &var_set);
+  var_set.xres = w;
+  var_set.yres = h;
+  var_set.xres_virtual = w;
+  var_set.yres_virtual = h * fb_num;
+  if (ioctl(fb->fd, FBIOPUT_VSCREENINFO, &var_set) < 0) {
+    return RET_FAIL;
+  }
+
+  free(fb->fbmem_offline);
+  munmap(fb->fbmem0, total_size);
+
+  ioctl(fb->fd, FBIOGET_FSCREENINFO, &fb->fix);
+  ioctl(fb->fd, FBIOGET_VSCREENINFO, &fb->var);
+  uint32_t new_size = fb_size(fb);
+  uint32_t new_total_size = fb_memsize(fb);
+
+  fb->fbmem0 = (uint8_t*)mmap(0, new_total_size, PROT_READ | PROT_WRITE, MAP_SHARED, fb->fd, 0);
+  if (fb->fbmem0 == MAP_FAILED) {
+    log_error("map framebuffer failed.\n");
+    return RET_FAIL;
+  }
+  fb->fbmem_offline = (uint8_t*)malloc(new_size);
+  assert(fb->fbmem_offline);
+  return RET_OK;
 }
 
 static inline bool_t check_if_run_in_vmware() {

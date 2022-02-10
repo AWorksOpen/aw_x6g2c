@@ -233,7 +233,7 @@
 </calibration_win>
 <chart_view>
   <style name="default">
-    <normal margin_bottom="20" margin_left="55" margin_right="55" margin_top="20"/>
+    <normal margin_bottom="20" margin_left="60" margin_right="60" margin_top="20"/>
   </style>
 </chart_view>
 <check_button>

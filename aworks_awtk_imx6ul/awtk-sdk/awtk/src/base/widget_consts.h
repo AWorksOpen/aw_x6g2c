@@ -66,6 +66,12 @@ BEGIN_C_DECLS
 #define WIDGET_PROP_H "h"
 
 /**
+ * @const WIDGET_PROP_MAX_H
+ * 最大高度。
+ */
+#define WIDGET_PROP_MAX_H "max_h"
+
+/**
  * @const WIDGET_PROP_DESIGN_W
  * 窗口设计时宽度。
  */
@@ -198,6 +204,12 @@ BEGIN_C_DECLS
 #define WIDGET_PROP_SINGLE_INSTANCE "single_instance"
 
 /**
+ * @const WIDGET_PROP_STRONGLY_FOCUS
+ * 点击非focusable控件时，是否让当前焦点控件失去焦点。比如点击窗口空白区域，是否让编辑器失去焦点。 
+ */
+#define WIDGET_PROP_STRONGLY_FOCUS "strongly_focus"
+
+/**
  * @const WIDGET_PROP_CHILDREN_LAYOUT
  * 子控件布局参数。
  */
@@ -239,6 +251,13 @@ BEGIN_C_DECLS
  */
 #define WIDGET_PROP_VIRTUAL_H "virtual_h"
 
+
+/**
+ * @const WIDGET_PROP_LOADING
+ * 控件正在加载。
+ */
+#define WIDGET_PROP_LOADING "loading"
+
 /**
  * @const WIDGET_PROP_NAME
  * 名称。
@@ -268,6 +287,12 @@ BEGIN_C_DECLS
  * 值。
  */
 #define WIDGET_PROP_VALUE "value"
+
+/**
+ * @const WIDGET_PROP_RADIO
+ * CheckButton是否单选。
+ */
+#define WIDGET_PROP_RADIO "radio"
 
 /**
  * @const WIDGET_PROP_REVERSE
@@ -619,7 +644,7 @@ BEGIN_C_DECLS
 
 /**
  * @const WIDGET_PROP_THEME
- * 窗口主题名称。
+ * 窗体样式名称。
  */
 #define WIDGET_PROP_THEME "theme"
 
@@ -655,13 +680,13 @@ BEGIN_C_DECLS
 
 /**
  * @const WIDGET_PROP_THEME_OBJ
- * 窗口的主题对象。
+ * 窗口的窗体样式对象。
  */
 #define WIDGET_PROP_THEME_OBJ "theme_obj"
 
 /**
  * @const WIDGET_PROP_DEFAULT_THEME_OBJ
- * 缺省的主题对象。
+ * 缺省的窗体样式对象。
  */
 #define WIDGET_PROP_DEFAULT_THEME_OBJ "default_theme_obj"
 
@@ -724,6 +749,12 @@ BEGIN_C_DECLS
  * 是否启用动画。
  */
 #define WIDGET_PROP_ANIMATABLE "animatable"
+
+/**
+ * @const WIDGET_PROP_AUTO_HIDE
+ * 是否自动隐藏。
+ */
+#define WIDGET_PROP_AUTO_HIDE "auto_hide"
 
 /**
  * @const WIDGET_PROP_AUTO_HIDE_SCROLL_BAR
@@ -1309,6 +1340,11 @@ typedef enum _window_stage_t {
    */
   WINDOW_STAGE_NONE = 0,
   /**
+   * @const WINDOW_STAGE_LOADED
+   * 从UI资源加载完成。
+   */
+  WINDOW_STAGE_LOADED,
+  /**
    * @const WINDOW_STAGE_CREATED
    * 创建完成。
    */
@@ -1373,6 +1409,12 @@ typedef enum _window_closable_t {
  * 正常状态。
  */
 #define WIDGET_STATE_NORMAL "normal"
+
+/**
+ * @const WIDGET_STATE_ACTIVATED
+ * 3/5keys模式时，进入激活状态(此时方向键用于修改值)。
+ */
+#define WIDGET_STATE_ACTIVATED "activated"
 
 /**
  * @const WIDGET_STATE_CHANGED

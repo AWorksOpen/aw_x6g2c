@@ -46,7 +46,9 @@
 #include "tkc/time_now.h"
 #include "awtk_global.h"
 #include "lcd_mem_others.h"
-
+#include "base/bitmap.h"
+#include "blend/image_g2d.h"
+#include "base/system_info.h"
 #include "lcd/lcd_mem_special.h"
 
 struct modeset_buf;
@@ -100,6 +102,8 @@ struct modeset_dev {
   struct modeset_buf bufs[2];
 
   drmModeModeInfo mode;
+  uint32_t mode_list_size;
+  drmModeModeInfo* mode_list;
   uint32_t conn;
   uint32_t crtc;
   drmModeCrtc* saved_crtc;
@@ -167,6 +171,23 @@ static int modeset_prepare(int fd) {
   return 0;
 }
 
+static int modeset_fb(int fd, struct modeset_dev* dev, uint32_t connector_id) {
+  /* create framebuffer #1 for this CRTC */
+  int ret = modeset_create_fb(fd, &dev->bufs[0]);
+  if (ret) {
+    fprintf(stderr, "cannot create framebuffer for connector %u\n", connector_id);
+    return ret;
+  }
+
+  /* create framebuffer #2 for this CRTC */
+  ret = modeset_create_fb(fd, &dev->bufs[1]);
+  if (ret) {
+    fprintf(stderr, "cannot create framebuffer for connector %u\n", connector_id);
+    modeset_destroy_fb(fd, &dev->bufs[0]);
+  }
+  return ret;
+}
+
 static int modeset_setup_dev(int fd, drmModeRes* res, drmModeConnector* conn,
                              struct modeset_dev* dev) {
   int ret;
@@ -185,6 +206,12 @@ static int modeset_setup_dev(int fd, drmModeRes* res, drmModeConnector* conn,
 
   /* copy the mode information into our device structure and into both
    * buffers */
+  dev->mode_list = TKMEM_ZALLOCN(drmModeModeInfo, conn->count_modes);
+  dev->mode_list_size = conn->count_modes;
+  for (int i = 0; i < conn->count_modes; i++) {
+    memcpy(&(dev->mode_list[i]), &conn->modes[i], sizeof(dev->mode));
+  }
+
   memcpy(&dev->mode, &conn->modes[0], sizeof(dev->mode));
   dev->bufs[0].width = conn->modes[0].hdisplay;
   dev->bufs[0].height = conn->modes[0].vdisplay;
@@ -200,22 +227,7 @@ static int modeset_setup_dev(int fd, drmModeRes* res, drmModeConnector* conn,
     return ret;
   }
 
-  /* create framebuffer #1 for this CRTC */
-  ret = modeset_create_fb(fd, &dev->bufs[0]);
-  if (ret) {
-    fprintf(stderr, "cannot create framebuffer for connector %u\n", conn->connector_id);
-    return ret;
-  }
-
-  /* create framebuffer #2 for this CRTC */
-  ret = modeset_create_fb(fd, &dev->bufs[1]);
-  if (ret) {
-    fprintf(stderr, "cannot create framebuffer for connector %u\n", conn->connector_id);
-    modeset_destroy_fb(fd, &dev->bufs[0]);
-    return ret;
-  }
-
-  return 0;
+  return modeset_fb(fd, dev, conn->connector_id);
 }
 
 /*
@@ -419,6 +431,7 @@ static void modeset_cleanup(int fd) {
     modeset_destroy_fb(fd, &iter->bufs[0]);
 
     /* free allocated memory */
+    TKMEM_FREE(iter->mode_list);
     free(iter);
   }
 }
@@ -465,12 +478,8 @@ static ret_t drm_vsync(int fd) {
     if (ret < 0) {
       fprintf(stderr, "select() failed with %d: %m\n", errno);
       break;
-    } else if (FD_ISSET(0, &fds)) {
-      fprintf(stderr, "exit due to user-input\n");
-      break;
     } else if (FD_ISSET(fd, &fds)) {
       drmHandleEvent(fd, &ev);
-      log_debug("flip done\n");
       break;
     }
   }
@@ -481,11 +490,14 @@ static ret_t drm_vsync(int fd) {
 /*awtk related*/
 
 static ret_t lcd_bgra8888_flush(lcd_t* lcd) {
+  static int inited = 0;
   int ret = 0;
-  uint32_t x = 0;
-  uint32_t y = 0;
+  bitmap_t src_img;
+  bitmap_t dst_img;
+  rect_t dr = {0, 0, lcd->w, lcd->h};
   lcd_mem_special_t* special = (lcd_mem_special_t*)lcd;
   drm_info_t* info = (drm_info_t*)(special->ctx);
+  lcd_orientation_t o = system_info()->lcd_orientation;
 
   struct modeset_dev* dev = info->dev;
   struct modeset_buf* buf = &dev->bufs[dev->front_buf ^ 1];
@@ -493,25 +505,42 @@ static ret_t lcd_bgra8888_flush(lcd_t* lcd) {
   int fd = info->fd;
   int dst_line_length = info->stride;
   uint32_t* dst = (uint32_t*)(buf->map);
-  uint32_t* src = (uint32_t*)(special->lcd_mem->offline_fb);
+  uint32_t* src = (uint32_t*)lcd_mem_get_offline_fb((lcd_mem_t*)lcd);
 
-  for (y = 0; y < lcd->h; y++) {
-    for (x = 0; x < lcd->w; x++) {
-      dst[x] = src[x];
-    }
-    src += lcd->w;
-    dst = (uint32_t*)((char*)dst + dst_line_length);
+  dev->front_buf ^= 1;
+  if (inited) {
+    dev->pflip_pending = true;
+    drm_vsync(fd);
+  } else {
+    inited = 1;
+  }
+
+  if (o == LCD_ORIENTATION_0 || o == LCD_ORIENTATION_180) {
+    bitmap_init(&dst_img, lcd->w, lcd->h, special->format, (uint8_t*)dst);
+  } else {
+    bitmap_init(&dst_img, lcd->h, lcd->w, special->format, (uint8_t*)dst);
+  }
+
+  bitmap_set_line_length(&dst_img, dst_line_length);
+  bitmap_init(&src_img, lcd->w, lcd->h, special->format, (uint8_t*)src);
+
+  if (o == LCD_ORIENTATION_0) {
+    image_copy(&dst_img, &src_img, &dr, dr.x, dr.y);
+  } else {
+    image_rotate(&dst_img, &src_img, &dr, o);
   }
 
   ret = drmModePageFlip(fd, dev->crtc, buf->fb, DRM_MODE_PAGE_FLIP_EVENT, dev);
+  if (src_img.buffer != NULL) {
+    graphic_buffer_destroy(src_img.buffer);
+  }
+  if (dst_img.buffer != NULL) {
+    graphic_buffer_destroy(dst_img.buffer);
+  }
   if (ret) {
     log_error("cannot flip CRTC for connector %u (%d): %m\n", dev->conn, errno);
     return RET_FAIL;
   } else {
-    dev->front_buf ^= 1;
-    dev->pflip_pending = true;
-    drm_vsync(fd);
-
     return RET_OK;
   }
 }
@@ -530,6 +559,76 @@ static void on_app_exit(void) {
 static void on_signal_int(int sig) {
   s_app_quited = TRUE;
   tk_quit();
+}
+
+static ret_t drm_do_resize(lcd_t* lcd, wh_t w, wh_t h) {
+  int i = 0;
+  int ret = 0;
+  drmEventContext ev;
+  int32_t find_number = -1;
+  lcd_mem_special_t* special = (lcd_mem_special_t*)lcd;
+  drm_info_t* info = (drm_info_t*)(special->ctx);
+  struct modeset_dev* dev = info->dev;
+
+  for (; i < dev->mode_list_size; i++) {
+    if (dev->mode_list[i].hdisplay == w && dev->mode_list[i].vdisplay == h) {
+      find_number = i;
+      break;
+    }
+  }
+  return_value_if_fail(find_number >= 0, RET_NOT_FOUND);
+
+  /* init variables */
+  memset(&ev, 0, sizeof(ev));
+  ev.version = DRM_EVENT_CONTEXT_VERSION;
+  ev.page_flip_handler = modeset_page_flip_event;
+
+  while (dev->pflip_pending) {
+    ret = drmHandleEvent(info->fd, &ev);
+    if (ret) break;
+  }
+
+  if (!dev->pflip_pending) {
+    drmModeSetCrtc(info->fd, dev->saved_crtc->crtc_id, dev->saved_crtc->buffer_id,
+                    dev->saved_crtc->x, dev->saved_crtc->y, &dev->conn, 1,
+                    &dev->saved_crtc->mode);
+  }
+  drmModeFreeCrtc(dev->saved_crtc);
+
+  modeset_destroy_fb(info->fd, &(dev->bufs[1]));
+  modeset_destroy_fb(info->fd, &(dev->bufs[0]));
+
+  dev->bufs[0].width = w;
+  dev->bufs[0].height = h;
+  dev->bufs[1].width = w;
+  dev->bufs[1].height = h;
+  modeset_fb(info->fd, dev, dev->conn);
+
+  dev->front_buf = 0;
+  info->w = dev->bufs[0].width;
+  info->h = dev->bufs[0].height;
+  info->stride = dev->bufs[0].stride;
+
+  dev->saved_crtc = drmModeGetCrtc(info->fd, dev->crtc);
+  memcpy(&(dev->mode), &(dev->mode_list[find_number]), sizeof(dev->mode));
+  ret = drmModeSetCrtc(info->fd, dev->crtc, dev->bufs[0].fb, 0, 0, &dev->conn, 1, &dev->mode);
+
+  return RET_OK;
+}
+
+static ret_t (*lcd_drm_linux_resize_defalut)(lcd_t* lcd, wh_t w, wh_t h, uint32_t line_length);
+static ret_t lcd_drm_linux_resize(lcd_t* lcd, wh_t w, wh_t h, uint32_t line_length) {
+  ret_t ret = RET_OK;
+
+  /* must has fb_resize_func */
+  ret = drm_do_resize(lcd, w, h);
+  return_value_if_fail(ret == RET_OK, ret);
+
+  if (lcd_drm_linux_resize_defalut != NULL) {
+    lcd_drm_linux_resize_defalut(lcd, w, h, line_length);
+  }
+
+  return ret;
 }
 
 lcd_t* lcd_linux_drm_create(const char* card) {
@@ -572,11 +671,16 @@ lcd_t* lcd_linux_drm_create(const char* card) {
     ioctl(s_ttyfd, KDSETMODE, KD_GRAPHICS);
   }
 
+  lcd_t* lcd = lcd_mem_special_create(drm->w, drm->h, BITMAP_FMT_BGRA8888, lcd_bgra8888_flush, NULL,
+                                lcd_bgra8888_destroy, drm);
+  if (lcd) {
+    lcd_drm_linux_resize_defalut = lcd->resize;
+    lcd->resize = lcd_drm_linux_resize;
+  }
+
   atexit(on_app_exit);
   signal(SIGINT, on_signal_int);
-
-  return lcd_mem_special_create(drm->w, drm->h, BITMAP_FMT_BGRA8888, lcd_bgra8888_flush, NULL,
-                                lcd_bgra8888_destroy, drm);
+  return lcd;
 error:
   TKMEM_FREE(drm);
   if (fd > 0) {

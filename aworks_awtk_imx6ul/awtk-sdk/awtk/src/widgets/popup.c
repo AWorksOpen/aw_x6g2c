@@ -67,40 +67,6 @@ static ret_t popup_set_prop(widget_t* widget, const char* name, const value_t* v
   return window_base_set_prop(widget, name, v);
 }
 
-static ret_t popup_idle_check_if_need_set_background_state(const idle_info_t* idle) {
-  xy_t x = 0;
-  xy_t y = 0;
-  wh_t right = 0;
-  wh_t bottom = 0;
-  bool_t is_background = FALSE;
-  widget_t* widget = WIDGET(idle->ctx);
-  widget_t* win = widget->parent;
-  event_t e = event_init(EVT_WINDOW_TO_BACKGROUND, widget);
-
-  if (win != NULL) {
-    WIDGET_FOR_EACH_CHILD_BEGIN_R(win, iter, i)
-    if (iter == widget) {
-      break;
-    }
-    x = tk_min(x, iter->x);
-    y = tk_min(y, iter->y);
-    right = tk_max(right, (iter->x + iter->w));
-    bottom = tk_max(bottom, (iter->y + iter->h));
-
-    WIDGET_FOR_EACH_CHILD_END();
-
-    if (x < widget->x && y < widget->y && right > (widget->x + widget->w) &&
-        bottom > (widget->y + widget->h)) {
-      is_background = TRUE;
-    }
-  }
-
-  if (is_background) {
-    widget_dispatch(widget, &e);
-  }
-  return RET_REMOVE;
-}
-
 static ret_t popup_idle_window_close(const idle_info_t* idle) {
   widget_t* widget = WIDGET(idle->ctx);
   widget_t* win = widget->parent;
@@ -116,10 +82,23 @@ static ret_t popup_idle_window_close(const idle_info_t* idle) {
   return RET_REMOVE;
 }
 
+static ret_t popup_update_close_timer(widget_t* widget) {
+  popup_t* popup = POPUP(widget);
+  return_value_if_fail(popup && widget != NULL, RET_BAD_PARAMS);
+
+  if (popup->timer_id != TK_INVALID_ID && popup->close_when_timeout > 0) {
+    timer_modify(popup->timer_id, popup->close_when_timeout);
+  }
+
+  return RET_OK;
+}
+
 static ret_t popup_on_event(widget_t* widget, event_t* e) {
   uint16_t type = e->type;
   popup_t* popup = POPUP(widget);
-  return_value_if_fail(popup && widget != NULL, RET_BAD_PARAMS);
+  window_base_t* window_base = WINDOW_BASE(popup);
+
+  return_value_if_fail(popup != NULL && widget != NULL && window_base != NULL, RET_BAD_PARAMS);
 
   switch (type) {
     case EVT_WINDOW_OPEN: {
@@ -136,9 +115,6 @@ static ret_t popup_on_event(widget_t* widget, event_t* e) {
       break;
     }
     case EVT_POINTER_UP: {
-      window_base_t* window_base = WINDOW_BASE(popup);
-      ENSURE(window_base != NULL);
-
       if (window_base->stage != WINDOW_STAGE_CLOSED) {
         bool_t close_window = FALSE;
         pointer_event_t* evt = (pointer_event_t*)e;
@@ -150,8 +126,6 @@ static ret_t popup_on_event(widget_t* widget, event_t* e) {
           if (!rect_contains(&r, evt->x, evt->y)) {
             close_window = TRUE;
           }
-        } else if (!popup->close_when_click) {
-          widget_add_idle(widget, popup_idle_check_if_need_set_background_state);
         }
 
         if (close_window) {
@@ -159,6 +133,19 @@ static ret_t popup_on_event(widget_t* widget, event_t* e) {
         }
       }
 
+      break;
+    }
+    default:
+      break;
+  }
+
+  switch (type) {
+    case EVT_POINTER_DOWN:
+    case EVT_POINTER_MOVE:
+    case EVT_POINTER_UP:
+    case EVT_KEY_DOWN:
+    case EVT_KEY_UP: {
+      popup_update_close_timer(widget);
       break;
     }
     default:
@@ -232,7 +219,7 @@ ret_t popup_set_close_when_timeout(widget_t* widget, uint32_t close_when_timeout
   }
 
   if (close_when_timeout > 0) {
-    popup->timer_id = timer_add(popup_on_timeout, widget, close_when_timeout);
+    popup->timer_id = widget_add_timer(widget, popup_on_timeout, close_when_timeout);
   }
 
   return RET_OK;

@@ -95,20 +95,31 @@ typedef struct _check_button_t {
    */
   bool_t value;
 
-  /*private*/
+  /**
+   * @property {bool_t} radio
+   * @annotation ["set_prop","get_prop"]
+   * 是否是单选按钮。
+   */
   bool_t radio;
+
+  /*private*/
   bool_t pressed;
   bool_t point_down_aborted;
 } check_button_t;
 
 /**
- * @event {event_t} EVT_VALUE_WILL_CHANGE
+ * @event {value_change_event_t} EVT_VALUE_WILL_CHANGE
  * 值(勾选状态)即将改变事件。
  */
 
 /**
- * @event {event_t} EVT_VALUE_CHANGED
+ * @event {value_change_event_t} EVT_VALUE_CHANGED
  * 值(勾选状态)改变事件。
+ */
+
+/**
+ * @event {pointer_event_t} EVT_CLICK
+ * 点击事件。
  */
 
 /**

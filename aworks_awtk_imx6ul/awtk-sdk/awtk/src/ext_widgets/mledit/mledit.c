@@ -1,5 +1,5 @@
 ﻿/**
- * File:   mledit.h
+ * File:   mledit.c
  * Author: AWTK Develop Team
  * Brief:  mledit
  *
@@ -160,12 +160,33 @@ ret_t mledit_set_wrap_word(widget_t* widget, bool_t wrap_word) {
   return RET_OK;
 }
 
+ret_t mledit_set_overwrite(widget_t* widget, bool_t overwrite) {
+  mledit_t* mledit = MLEDIT(widget);
+  return_value_if_fail(mledit != NULL, RET_BAD_PARAMS);
+
+  mledit->overwrite = overwrite;
+  text_edit_set_overwrite(mledit->model, overwrite);
+
+  return RET_OK;
+}
+
 ret_t mledit_set_max_lines(widget_t* widget, uint32_t max_lines) {
   mledit_t* mledit = MLEDIT(widget);
   return_value_if_fail(mledit != NULL, RET_BAD_PARAMS);
 
   mledit->max_lines = max_lines;
   text_edit_set_max_rows(mledit->model, max_lines);
+  text_edit_layout(mledit->model);
+
+  return RET_OK;
+}
+
+ret_t mledit_set_max_chars(widget_t* widget, uint32_t max_chars) {
+  mledit_t* mledit = MLEDIT(widget);
+  return_value_if_fail(mledit != NULL, RET_BAD_PARAMS);
+
+  mledit->max_chars = max_chars;
+  text_edit_set_max_chars(mledit->model, max_chars);
   text_edit_layout(mledit->model);
 
   return RET_OK;
@@ -183,8 +204,14 @@ static ret_t mledit_get_prop(widget_t* widget, const char* name, value_t* v) {
   } else if (tk_str_eq(name, MLEDIT_PROP_WRAP_WORD)) {
     value_set_bool(v, mledit->wrap_word);
     return RET_OK;
+  } else if (tk_str_eq(name, MLEDIT_PROP_OVERWRITE)) {
+    value_set_bool(v, mledit->overwrite);
+    return RET_OK;
   } else if (tk_str_eq(name, MLEDIT_PROP_MAX_LINES)) {
     value_set_int(v, mledit->max_lines);
+    return RET_OK;
+  } else if (tk_str_eq(name, MLEDIT_PROP_MAX_CHARS)) {
+    value_set_int(v, mledit->max_chars);
     return RET_OK;
   } else if (tk_str_eq(name, MLEDIT_PROP_SCROLL_LINE)) {
     value_set_int(v, mledit->scroll_line);
@@ -259,9 +286,12 @@ static ret_t mledit_get_prop(widget_t* widget, const char* name, value_t* v) {
     value_set_bool(v, mledit->close_im_when_blured);
     return RET_OK;
   } else if (tk_str_eq(name, WIDGET_PROP_INPUTING)) {
-    int64_t delta = (time_now_ms() - mledit->last_user_action_time);
-    bool_t inputing =
-        (delta < TK_INPUTING_TIMEOUT) && (mledit->last_user_action_time > 0) && widget->focused;
+    input_method_t* im = input_method();
+    bool_t inputing = (im != NULL && im->widget == widget) || mledit->is_key_inputing;
+    /* 当控件没有父集窗口或者父集窗口没有打开的时候，通过 focused 来判断是否正在输入 */
+    if (!inputing && !widget_is_window_opened(widget)) {
+      inputing = widget->focused;
+    }
     value_set_bool(v, inputing);
     return RET_OK;
   }
@@ -310,8 +340,14 @@ static ret_t mledit_set_prop(widget_t* widget, const char* name, const value_t* 
   } else if (tk_str_eq(name, MLEDIT_PROP_WRAP_WORD)) {
     mledit_set_wrap_word(widget, value_bool(v));
     return RET_OK;
+  } else if (tk_str_eq(name, MLEDIT_PROP_OVERWRITE)) {
+    mledit_set_overwrite(widget, value_bool(v));
+    return RET_OK;
   } else if (tk_str_eq(name, MLEDIT_PROP_MAX_LINES)) {
     mledit_set_max_lines(widget, value_int(v));
+    return RET_OK;
+  } else if (tk_str_eq(name, MLEDIT_PROP_MAX_CHARS)) {
+    mledit_set_max_chars(widget, value_int(v));
     return RET_OK;
   } else if (tk_str_eq(name, MLEDIT_PROP_SCROLL_LINE)) {
     mledit_set_scroll_line(widget, value_int(v));
@@ -509,11 +545,38 @@ ret_t mledit_set_cursor(widget_t* widget, uint32_t cursor) {
   return text_edit_set_cursor(mledit->model, cursor);
 }
 
+uint32_t mledit_get_cursor(widget_t* widget) {
+  mledit_t* mledit = MLEDIT(widget);
+  return_value_if_fail(widget != NULL && mledit != NULL, 0);
+
+  return text_edit_get_cursor(mledit->model);
+}
+
 ret_t mledit_set_scroll_line(widget_t* widget, uint32_t scroll_line) {
   mledit_t* mledit = MLEDIT(widget);
   return_value_if_fail(widget != NULL && mledit != NULL, RET_BAD_PARAMS);
   mledit->scroll_line = scroll_line;
   return RET_OK;
+}
+
+ret_t mledit_scroll_to_offset(widget_t* widget, uint32_t offset) {
+  mledit_t* mledit = MLEDIT(widget);
+  int32_t scroll_y = 0;
+  scroll_bar_t* vscroll_bar =
+      SCROLL_BAR(widget_lookup_by_type(widget, WIDGET_TYPE_SCROLL_BAR_DESKTOP, TRUE));
+
+  return_value_if_fail(mledit != NULL && mledit->model != NULL, RET_BAD_PARAMS);
+
+  scroll_y = text_edit_get_height(mledit->model, offset);
+
+  if (vscroll_bar != NULL) {
+    text_edit_state_t state = {0};
+    text_edit_get_state(mledit->model, &state);
+
+    scroll_y = tk_min(scroll_y, tk_max(vscroll_bar->virtual_size - vscroll_bar->widget.h, 0));
+  }
+
+  return text_edit_set_offset(mledit->model, 0, scroll_y);
 }
 
 static ret_t mledit_focus_set_cursor(const idle_info_t* info) {
@@ -545,7 +608,6 @@ static ret_t mledit_on_event(widget_t* widget, event_t* e) {
       if (widget->target == NULL) {
         mledit_request_input_method(widget);
       }
-      mledit->last_user_action_time = e->time;
       mledit_update_status(widget);
       widget_invalidate(widget, NULL);
       break;
@@ -559,41 +621,49 @@ static ret_t mledit_on_event(widget_t* widget, event_t* e) {
       pointer_event_t evt = *(pointer_event_t*)e;
       if (widget->parent && widget->parent->grab_widget == widget) {
         if (widget->target == NULL) {
+          text_edit_set_lock_scrollbar_value(mledit->model, FALSE);
           text_edit_drag(mledit->model, evt.x, evt.y);
+          text_edit_set_lock_scrollbar_value(mledit->model, mledit->lock_scrollbar_value);
           ret = RET_STOP;
         }
       }
 
-      if (evt.pressed) {
-        mledit->last_user_action_time = e->time;
-      }
       widget_invalidate(widget, NULL);
       break;
     }
     case EVT_POINTER_UP: {
       widget_ungrab(widget->parent, widget);
-      mledit->last_user_action_time = e->time;
       widget_invalidate(widget, NULL);
       break;
     }
     case EVT_KEY_DOWN: {
       key_event_t* evt = (key_event_t*)e;
       int32_t key = evt->key;
+#ifdef MACOS
+      bool_t is_control = evt->cmd;
+#else
+      bool_t is_control = evt->ctrl;
+#endif
+      if (key == TK_KEY_ESCAPE || (key >= TK_KEY_F1 && key <= TK_KEY_F12)) {
+        break;
+      }
+
       if (mledit->readonly) {
-        if (evt->ctrl && (key == TK_KEY_C || key == TK_KEY_c)) {
+        if (is_control && (key == TK_KEY_C || key == TK_KEY_c)) {
           log_debug("copy\n");
         } else {
           break;
         }
       }
       text_edit_key_down(mledit->model, (key_event_t*)e);
-      if ((key < 128 && isprint(key)) || key == TK_KEY_BACKSPACE || key == TK_KEY_DELETE) {
+      if ((key < 128 && tk_isprint(key)) || key == TK_KEY_BACKSPACE || key == TK_KEY_DELETE ||
+          key == TK_KEY_TAB || key_code_is_enter(key)) {
         mledit_dispatch_event(widget, EVT_VALUE_CHANGING);
       }
 
       mledit_update_status(widget);
       ret = RET_STOP;
-      mledit->last_user_action_time = e->time;
+      mledit->is_key_inputing = TRUE;
       widget_invalidate(widget, NULL);
       break;
     }
@@ -615,22 +685,18 @@ static ret_t mledit_on_event(widget_t* widget, event_t* e) {
       }
       mledit_commit_str(widget, evt->text);
       mledit_update_status(widget);
-      mledit->last_user_action_time = e->time;
       widget_invalidate(widget, NULL);
       break;
     }
     case EVT_IM_PREEDIT: {
-      mledit->last_user_action_time = e->time;
       text_edit_preedit(mledit->model);
       break;
     }
     case EVT_IM_PREEDIT_CONFIRM: {
-      mledit->last_user_action_time = e->time;
       text_edit_preedit_confirm(mledit->model);
       break;
     }
     case EVT_IM_PREEDIT_ABORT: {
-      mledit->last_user_action_time = e->time;
       text_edit_preedit_abort(mledit->model);
       break;
     }
@@ -640,13 +706,19 @@ static ret_t mledit_on_event(widget_t* widget, event_t* e) {
       break;
     }
     case EVT_KEY_UP: {
-      key_event_t* key_event = key_event_cast(e);
-      if (key_code_is_enter(key_event->key)) {
+      key_event_t* evt = key_event_cast(e);
+      int32_t key = evt->key;
+
+      if (key == TK_KEY_ESCAPE || (key >= TK_KEY_F1 && key <= TK_KEY_F12)) {
+        break;
+      }
+
+      if (key_code_is_enter(key)) {
         ret = RET_STOP;
       } else {
-        ret = text_edit_key_up(mledit->model, key_event);
+        ret = text_edit_key_up(mledit->model, evt);
       }
-      mledit->last_user_action_time = e->time;
+      mledit->is_key_inputing = TRUE;
       widget_invalidate(widget, NULL);
       break;
     }
@@ -656,8 +728,11 @@ static ret_t mledit_on_event(widget_t* widget, event_t* e) {
     }
     case EVT_BLUR: {
       if (mledit->close_im_when_blured) {
+        mledit->is_key_inputing = FALSE;
         input_method_request(input_method(), NULL);
       }
+      text_edit_preedit_confirm(mledit->model);
+
       mledit_update_status(widget);
       mledit_dispatch_event(widget, EVT_VALUE_CHANGED);
       mledit_commit_text(widget);
@@ -700,7 +775,6 @@ static ret_t mledit_on_event(widget_t* widget, event_t* e) {
         }
       }
       ret = RET_STOP;
-      mledit->last_user_action_time = e->time;
       widget_invalidate(widget, NULL);
       break;
     }
@@ -714,6 +788,37 @@ static ret_t mledit_on_event(widget_t* widget, event_t* e) {
       mledit_update_status(widget);
       widget_invalidate(widget, NULL);
       break;
+    }
+    case EVT_WIDGET_LOAD: {
+      uint32_t max_size = widget->text.size;
+      uint32_t line_break_num = mledit->max_lines;
+      uint32_t i = 0;
+
+      for (i = 0; i < max_size; i++) {
+        if (i + 1 < max_size &&
+            TWINS_WCHAR_IS_LINE_BREAK(widget->text.str[i], widget->text.str[i + 1])) {
+          line_break_num--;
+          i++;
+        } else if (WCHAR_IS_LINE_BREAK(widget->text.str[i])) {
+          line_break_num--;
+        }
+        if (line_break_num == 0) {
+          max_size = i;
+          break;
+        }
+      }
+
+      if (mledit->max_chars != 0) {
+        max_size = tk_min(max_size, mledit->max_chars);
+      }
+
+      if (max_size != widget->text.size) {
+        char* text = TKMEM_ZALLOCN(char, widget->text.size);
+        wstr_get_utf8(&widget->text, text, widget->text.size + 1);
+        text[max_size] = '\0';
+        widget_set_text_utf8(widget, text);
+        TKMEM_FREE(text);
+      }
     }
     default:
       break;
@@ -738,6 +843,11 @@ static ret_t mledit_sync_line_number(widget_t* widget, text_edit_state_t* state)
   widget_t* line_number = widget_lookup_by_type(widget, WIDGET_TYPE_LINE_NUMBER, TRUE);
   return_value_if_fail(mledit != NULL, RET_BAD_PARAMS);
   if (line_number != NULL) {
+    const uint32_t* lines_of_each_row = text_edit_get_lines_of_each_row(mledit->model);
+    if (lines_of_each_row != NULL) {
+      line_number_set_lines_of_each_row(line_number, lines_of_each_row, state->max_rows);
+    }
+
     line_number_set_yoffset(line_number, state->oy);
     line_number_set_line_height(line_number, state->line_height);
     line_number_set_top_margin(line_number, mledit->top_margin);
@@ -752,11 +862,18 @@ static ret_t mledit_sync_line_number(widget_t* widget, text_edit_state_t* state)
 static ret_t mledit_sync_scrollbar(widget_t* widget, text_edit_state_t* state) {
   xy_t y = 0;
   wh_t virtual_h = 0;
+  int32_t margin = 0;
+  int32_t margin_top = 0;
+  int32_t margin_bottom = 0;
   widget_t* vscroll_bar = NULL;
   mledit_t* mledit = MLEDIT(widget);
   return_value_if_fail(mledit != NULL, RET_BAD_PARAMS);
-  virtual_h = (state->last_line_number + 1) * state->line_height + mledit->top_margin +
-              mledit->bottom_margin;
+
+  margin = style_get_int(widget->astyle, STYLE_ID_MARGIN, 0);
+  margin_top = style_get_int(widget->astyle, STYLE_ID_MARGIN_TOP, margin);
+  margin_bottom = style_get_int(widget->astyle, STYLE_ID_MARGIN_BOTTOM, margin);
+
+  virtual_h = (state->last_line_number + 1) * state->line_height + margin_top + margin_bottom;
   vscroll_bar = widget_lookup_by_type(widget, WIDGET_TYPE_SCROLL_BAR_DESKTOP, TRUE);
 
   if (vscroll_bar != NULL) {
@@ -798,6 +915,14 @@ static ret_t mledit_on_scroll_bar_value_changed(void* ctx, event_t* e) {
   value = widget_get_value(vscroll_bar);
   value = (scroll_bar->virtual_size - vscroll_bar->h) * value / scroll_bar->virtual_size;
 
+  if (mledit->overwrite && mledit->max_chars == 0 && mledit->max_lines != 0) {
+    if (value == scroll_bar->virtual_size - vscroll_bar->h) {
+      mledit->lock_scrollbar_value = FALSE;
+    } else {
+      mledit->lock_scrollbar_value = TRUE;
+    }
+    text_edit_set_lock_scrollbar_value(mledit->model, mledit->lock_scrollbar_value);
+  }
   text_edit_set_offset(mledit->model, 0, value);
 
   return RET_OK;
@@ -819,6 +944,87 @@ ret_t mledit_set_close_im_when_blured(widget_t* widget, bool_t close_im_when_blu
   mledit->close_im_when_blured = close_im_when_blured;
 
   return RET_OK;
+}
+
+ret_t mledit_set_select(widget_t* widget, uint32_t start, uint32_t end) {
+  mledit_t* mledit = MLEDIT(widget);
+  return_value_if_fail(mledit != NULL && mledit->model != NULL, RET_BAD_PARAMS);
+
+  return text_edit_set_select(mledit->model, start, end);
+}
+
+char* mledit_get_selected_text(widget_t* widget) {
+  mledit_t* mledit = MLEDIT(widget);
+  return_value_if_fail(mledit != NULL && mledit->model != NULL, NULL);
+
+  return text_edit_get_selected_text(mledit->model);
+}
+
+static slist_t* mledit_get_rows_by_text(widget_t* widget, slist_t* slist, const char* text) {
+  uint32_t text_size = 0;
+  uint32_t i = 0;
+  return_value_if_fail(widget != NULL && slist != NULL && text != NULL, NULL);
+
+  text_size = tk_strlen(text);
+  slist_remove_all(slist);
+
+  for (i = 0; i < text_size; i++) {
+    if (i + 1 < text_size && TWINS_CHAR_IS_LINE_BREAK(text[i], text[i + 1])) {
+      i++;
+      slist_append(slist, tk_pointer_from_int((int32_t)(i + 1)));
+    } else if (CHAR_IS_LINE_BREAK(text[i])) {
+      slist_append(slist, tk_pointer_from_int((int32_t)(i + 1)));
+    }
+  }
+
+  return slist;
+}
+
+ret_t mledit_insert_text(widget_t* widget, uint32_t offset, const char* text) {
+  ret_t ret = RET_OK;
+  mledit_t* mledit = MLEDIT(widget);
+  return_value_if_fail(mledit != NULL && mledit->model != NULL, RET_BAD_PARAMS);
+
+  if (!mledit->overwrite || mledit->max_chars > 0 || mledit->max_lines == 0) {
+    ret = text_edit_insert_text(mledit->model, offset, text);
+  } else {
+    uint32_t rows_start_offset = 0;
+    slist_t offset_list;
+    slist_init(&offset_list, NULL, NULL);
+    if (mledit_get_rows_by_text(widget, &offset_list, text) != NULL) {
+      uint32_t text_size = tk_strlen(text);
+      if (mledit->max_lines == 1) {
+        rows_start_offset = (uint32_t)tk_pointer_to_int(slist_tail_pop(&offset_list));
+
+        if (rows_start_offset < text_size) {
+          wstr_reset(&widget->text);
+          ret = text_edit_insert_text(mledit->model, offset, text + rows_start_offset);
+        }
+      } else {
+        slist_node_t* iter = offset_list.first;
+        while (ret == RET_OK && iter != NULL) {
+          uint32_t rows_end_offset = (uint32_t)tk_pointer_to_int(iter->data);
+
+          ret = text_edit_overwrite_text(mledit->model, &offset, text + rows_start_offset,
+                                         rows_end_offset - rows_start_offset);
+          rows_start_offset = rows_end_offset;
+          iter = iter->next;
+        }
+
+        if (ret == RET_OK && rows_start_offset < text_size) {
+          ret = text_edit_insert_text(mledit->model, offset, text + rows_start_offset);
+        }
+      }
+    }
+    slist_deinit(&offset_list);
+  }
+
+  if (ret == RET_OK) {
+    mledit_dispatch_event(widget, EVT_VALUE_CHANGED);
+    mledit_update_status(widget);
+  }
+
+  return ret;
 }
 
 static ret_t mledit_on_add_child(widget_t* widget, widget_t* child) {
@@ -860,8 +1066,10 @@ const char* s_mledit_properties[] = {WIDGET_PROP_READONLY,
                                      WIDGET_PROP_OPEN_IM_WHEN_FOCUSED,
                                      WIDGET_PROP_CLOSE_IM_WHEN_BLURED,
                                      MLEDIT_PROP_MAX_LINES,
+                                     MLEDIT_PROP_MAX_CHARS,
                                      MLEDIT_PROP_WRAP_WORD,
                                      MLEDIT_PROP_SCROLL_LINE,
+                                     MLEDIT_PROP_OVERWRITE,
                                      NULL};
 
 TK_DECL_VTABLE(mledit) = {.size = sizeof(mledit_t),
@@ -888,6 +1096,8 @@ widget_t* mledit_create(widget_t* parent, xy_t x, xy_t y, wh_t w, wh_t h) {
 
   mledit->model = text_edit_create(widget, FALSE);
   ENSURE(mledit->model != NULL);
+
+  mledit->wrap_word = TRUE;
   mledit->margin = 1;
   mledit->top_margin = 0;
   mledit->left_margin = 0;

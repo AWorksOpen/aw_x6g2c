@@ -64,7 +64,7 @@
 
 * 通过脏矩算法只更新变化的部分。
 * 支持 3 FrameBuffer 让界面以最高帧率运行 （可选）。
-* UI 描述文件和主题文件使用高效的二进制格式，解析在瞬间完成。
+* UI 描述文件和窗体样式文件使用高效的二进制格式，解析在瞬间完成。
 * 支持各种 GPU 加速接口。如 OpenGL、DirectX、Vulkan 和 Metal 等。
 * 支持嵌入式平台的各种 2D 加速接口。目前 STM32 的 DMA2D 和 NXP 的 PXP 接口，厂家可以轻松扩展自己的加速接口。
 
@@ -91,7 +91,7 @@
 * 支持控件动画。
 * 支持高清屏。
 * 支持界面描述文件。
-* 支持主题描述文件。
+* 支持窗体样式描述文件。
 * 主题切换实时生效。
 * 支持控件布局策略。
 * 支持对话框高亮策略。
@@ -217,14 +217,15 @@
   * 支持自动根据屏幕大小自动缩放控件的位置和大小。
 
 ### 4. 新增重要 API
-  * 增加 data\_reader\_mem。
-  * 增加 data\_writer\_wbuffer。
-  * 增加 conf\_ini\_create。
-  * 增加 conf\_json\_create。
-  * 增加 conf\_ubjson\_create。
-  * 增加 str\_encode\_hex。
-  * 增加 timer\_resume/timer\_suspend。
+  * 增加 str\_encode\_hex
+  * 增加 data\_reader\_mem
+  * 增加 data\_writer\_wbuffer
+  * 增加 conf\_ini\_create
+  * 增加 conf\_json\_create
+  * 增加 conf\_ubjson\_create
+  * 增加 timer\_resume/timer\_suspend
   * 增加 window\_manager\_switch\_to
+  * 增加 fs\_copy\_file、fs\_copy\_dir和dir\_exist
   * 增加 fs\_get\_temp\_path、fs\_remove\_dir\_r、fs\_create\_dir\_r 和 fs\_change\_dir
 
 ### 5. 新增控件
@@ -236,5 +237,7 @@
 ### 6. 新增相关项目
 
   * 增加 [vscode 实时预览插件](https://github.com/zlgopen/awtk-vscode-plugin)。
+  * 增加录音功能[awtk-media-player](https://github.com/zlgopen/awtk-media-player) 
+  * 增加 [awtk-openxlsx](https://github.com/zlgopen/awtk-openxlsx)
 
 > 欢迎广大开发者一起参与开发：[生态共建计划](../awtk_ecology.md)。

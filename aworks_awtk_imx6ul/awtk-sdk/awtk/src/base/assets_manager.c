@@ -26,6 +26,7 @@
 #include "base/locale_info.h"
 #include "base/system_info.h"
 #include "base/assets_manager.h"
+#include "base/vgcanvas_asset_manager.inc"
 
 #define RAW_DIR "raw"
 #define ASSETS_DIR "assets"
@@ -42,7 +43,29 @@ static int asset_cache_cmp_type(const void* a, const void* b) {
   return aa->type - bb->type;
 }
 
+static int asset_cache_cmp_type_and_name(const void* a, const void* b) {
+  const asset_info_t* aa = (const asset_info_t*)a;
+  const asset_info_t* bb = (const asset_info_t*)b;
+
+  if (aa->is_in_rom) {
+    return -1;
+  }
+
+  if (aa->type == bb->type) {
+    return tk_str_cmp(aa->name, bb->name);
+  } else {
+    return aa->type - bb->type;
+  }
+}
+
 static assets_manager_t* s_assets_manager = NULL;
+
+static ret_t assets_manager_dispatch_event(assets_manager_t* am, int32_t etype,
+                                           asset_info_t* info) {
+  assets_event_t e;
+  return emitter_dispatch(EMITTER(am),
+                          assets_event_init(&e, am, etype, (asset_type_t)(info->type), info));
+}
 
 static locale_info_t* assets_manager_get_locale_info(assets_manager_t* am) {
   return_value_if_fail(am != NULL, NULL);
@@ -211,6 +234,10 @@ static asset_info_t* try_load_image(assets_manager_t* am, const char* theme, con
     case ASSET_TYPE_IMAGE_BSVG: {
       extname = ".bsvg";
       subpath = "images/svg";
+      break;
+    }
+    case ASSET_TYPE_IMAGE_OTHER: {
+      extname = "";
       break;
     }
     default: {
@@ -436,6 +463,14 @@ static asset_info_t* assets_manager_load_asset(assets_manager_t* am, asset_type_
         break;
       }
 
+      if ((info = try_load_image(am, theme, name, ASSET_TYPE_IMAGE_OTHER, TRUE)) != NULL) {
+        break;
+      }
+
+      if ((info = try_load_image(am, theme, name, ASSET_TYPE_IMAGE_OTHER, FALSE)) != NULL) {
+        break;
+      }
+
       break;
     }
     case ASSET_TYPE_UI: {
@@ -502,7 +537,6 @@ asset_info_t* assets_manager_load(assets_manager_t* am, asset_type_t type, const
 
 asset_info_t* assets_manager_load_ex(assets_manager_t* am, asset_type_t type, uint16_t subtype,
                                      const char* name) {
-  assets_event_t e;
   asset_info_t* info = NULL;
   return_value_if_fail(am != NULL && name != NULL, NULL);
 
@@ -511,8 +545,7 @@ asset_info_t* assets_manager_load_ex(assets_manager_t* am, asset_type_t type, ui
   }
   info = assets_manager_load_impl(am, type, subtype, name);
   if (info != NULL) {
-    emitter_dispatch(EMITTER(am), assets_event_init(&e, am, EVT_ASSET_MANAGER_LOAD_ASSET,
-                                                    (asset_type_t)(info->type), info));
+    assets_manager_dispatch_event(am, EVT_ASSET_MANAGER_LOAD_ASSET, info);
   }
   return info;
 }
@@ -555,6 +588,10 @@ ret_t assets_manager_set_res_root(assets_manager_t* am, const char* res_root) {
 ret_t assets_manager_clear_all(assets_manager_t* am) {
   return_value_if_fail(am != NULL, RET_BAD_PARAMS);
 
+  assets_manager_clear_cache(am, ASSET_TYPE_UI);
+  assets_manager_clear_cache(am, ASSET_TYPE_STYLE);
+  assets_manager_clear_cache(am, ASSET_TYPE_FONT);
+
   return darray_clear(&(am->assets));
 }
 
@@ -592,7 +629,12 @@ ret_t assets_manager_set_locale_info(assets_manager_t* am, locale_info_t* locale
 ret_t assets_manager_add(assets_manager_t* am, const void* info) {
   const asset_info_t* r = (const asset_info_t*)info;
   return_value_if_fail(am != NULL && info != NULL, RET_BAD_PARAMS);
-
+#if LOAD_ASSET_WITH_MMAP
+  if (r->is_in_rom) {
+    // 不支持添加非 mmap 资源的外部资源。
+    assert(!" mmap model not supported assets this is in rom ");
+  }
+#endif
   asset_info_ref((asset_info_t*)r);
   return darray_push(&(am->assets), (void*)r);
 }
@@ -699,32 +741,58 @@ const asset_info_t* assets_manager_ref_ex(assets_manager_t* am, asset_type_t typ
 }
 
 ret_t assets_manager_unref(assets_manager_t* am, const asset_info_t* info) {
-  assets_event_t e;
-  return_value_if_fail(info != NULL, RET_BAD_PARAMS);
-
-  if (am == NULL) {
+  if (am == NULL || info == NULL) {
     /*asset manager was destroied*/
     return RET_OK;
   }
+
   if (info->refcount == 1) {
-    emitter_dispatch(EMITTER(am),
-                     assets_event_init(&e, am, EVT_ASSET_MANAGER_UNLOAD_ASSET,
-                                       (asset_type_t)(info->type), (asset_info_t*)info));
+    assets_manager_dispatch_event(am, EVT_ASSET_MANAGER_UNLOAD_ASSET, (asset_info_t*)info);
   }
+
   return asset_info_unref((asset_info_t*)info);
 }
 
+ret_t assets_manager_clear_cache_ex(assets_manager_t* am, asset_type_t type, const char* name) {
+  int32_t size = 0;
+  asset_info_t info;
+  ret_t ret = RET_OK;
+  return_value_if_fail(am != NULL && name != NULL, RET_BAD_PARAMS);
+
+  memset(&info, 0x00, sizeof(info));
+  if (assets_manager_find_in_cache(am, type, 0, name) == NULL) {
+    return RET_NOT_FOUND;
+  }
+
+  info.type = type;
+  tk_strncpy_s(info.name, sizeof(info.name), name, strlen(name));
+
+  size = am->assets.size;
+  ret = darray_remove_all(&(am->assets), asset_cache_cmp_type_and_name, &info);
+
+  if (am->assets.size < size) {
+    assets_manager_dispatch_event(am, EVT_ASSET_MANAGER_UNLOAD_ASSET, &info);
+  }
+
+  return ret;
+}
+
 ret_t assets_manager_clear_cache(assets_manager_t* am, asset_type_t type) {
-  assets_event_t e;
+  int32_t size = 0;
   asset_info_t info;
   ret_t ret = RET_OK;
 
   memset(&info, 0x00, sizeof(info));
   info.type = type;
   return_value_if_fail(am != NULL, RET_BAD_PARAMS);
+
+  size = am->assets.size;
   ret = darray_remove_all(&(am->assets), NULL, &info);
-  emitter_dispatch(EMITTER(am),
-                   assets_event_init(&e, am, EVT_ASSET_MANAGER_CLEAR_CACHE, type, NULL));
+
+  if (am->assets.size < size) {
+    assets_manager_dispatch_event(am, EVT_ASSET_MANAGER_CLEAR_CACHE, &info);
+  }
+
   return ret;
 }
 

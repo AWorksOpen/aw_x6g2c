@@ -54,9 +54,6 @@
 #define MICE_DEVICE_FILENAME "/dev/input/mouse0"
 #endif /*MICE_DEVICE_FILENAME*/
 
-#ifdef WITH_LINUX_EGL
-static lcd_egl_context_t* s_lcd = NULL;
-#endif
 
 static ret_t main_loop_linux_destroy(main_loop_t* l) {
   main_loop_simple_t* loop = (main_loop_simple_t*)l;
@@ -64,21 +61,19 @@ static ret_t main_loop_linux_destroy(main_loop_t* l) {
   main_loop_simple_reset(loop);
 
 #ifdef WITH_LINUX_EGL
-  lcd_linux_egl_destroy(s_lcd);
 #else
   native_window_raw_deinit();
 #endif
-
 
   return RET_OK;
 }
 
 ret_t input_dispatch_to_main_loop(void* ctx, const event_queue_req_t* evt, const char* msg) {
-  main_loop_t* l = (main_loop_t*)ctx;
+  main_loop_simple_t* l = (main_loop_simple_t*)ctx;
   event_queue_req_t event = *evt;
   event_queue_req_t* e = &event;
 
-  if (l != NULL && l->queue_event != NULL) {
+  if (l != NULL && l->base.queue_event != NULL) {
     switch (e->event.type) {
       case EVT_KEY_DOWN:
       case EVT_KEY_UP:
@@ -86,9 +81,24 @@ ret_t input_dispatch_to_main_loop(void* ctx, const event_queue_req_t* evt, const
         e->event.size = sizeof(e->key_event);
         break;
       }
-      case EVT_POINTER_DOWN:
-      case EVT_POINTER_MOVE:
+      case EVT_CONTEXT_MENU: {
+        e->event.size = sizeof(e->pointer_event);
+        break;
+      }
+      case EVT_POINTER_DOWN: {
+        l->pressed = TRUE;
+        e->pointer_event.pressed = l->pressed;
+        e->event.size = sizeof(e->pointer_event);
+        break;
+      }
+      case EVT_POINTER_MOVE: {
+        e->pointer_event.pressed = l->pressed;
+        e->event.size = sizeof(e->pointer_event);
+        break;
+      }
       case EVT_POINTER_UP: {
+        e->pointer_event.pressed = l->pressed;
+        l->pressed = FALSE;
         e->event.size = sizeof(e->pointer_event);
         break;
       }
@@ -100,7 +110,7 @@ ret_t input_dispatch_to_main_loop(void* ctx, const event_queue_req_t* evt, const
         break;
     }
 
-    main_loop_queue_event(l, e);
+    main_loop_queue_event(&(l->base), e);
     input_dispatch_print(ctx, e, msg);
   } else {
     return RET_BAD_PARAMS;
@@ -137,7 +147,6 @@ main_loop_t* main_loop_init(int w, int h) {
   return_value_if_fail(lcd != NULL, NULL);
 
 #ifdef WITH_LINUX_EGL
-  s_lcd = lcd;
 #else
   native_window_raw_init(lcd);
 #endif

@@ -129,7 +129,7 @@ static ret_t list_view_h_on_scroll_view_layout_children(widget_t* widget) {
       widget_t* iter = (widget_t*)darray_get(widget->children, i);
 
       if (widget->children_layout == NULL) {
-        widget_move_resize(iter, x, y, w, h);
+        widget_move_resize_ex(iter, x, y, w, h, FALSE);
         widget_layout(iter);
       }
       x = iter->x + iter->w + spacing;
@@ -176,7 +176,7 @@ ret_t list_view_h_set_item_width(widget_t* widget, int32_t item_width) {
   return RET_OK;
 }
 
-ret_t list_view_h_set_spacing(widget_t* widget, bool_t spacing) {
+ret_t list_view_h_set_spacing(widget_t* widget, int32_t spacing) {
   list_view_h_t* list_view_h = LIST_VIEW_H(widget);
   return_value_if_fail(widget != NULL, RET_BAD_PARAMS);
 

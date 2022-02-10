@@ -47,7 +47,7 @@ typedef struct _window_animator_vtable_t {
   window_animator_draw_curr_window_t draw_curr_window;
 } window_animator_vtable_t;
 
-typedef window_animator_t* (*window_animator_create_t)(bool_t open, object_t* args);
+typedef window_animator_t* (*window_animator_create_t)(bool_t open, tk_object_t* args);
 
 /**
  * @enum window_animator_type_t
@@ -127,15 +127,16 @@ typedef window_animator_t* (*window_animator_create_t)(bool_t open, object_t* ar
  */
 struct _window_animator_t {
   uint32_t duration;
-  uint32_t start_time;
+  uint64_t start_time;
   easing_func_t easing;
 
   widget_t* prev_win;
   widget_t* curr_win;
 
+#ifndef WITHOUT_WINDOW_ANIMATOR_CACHE
   bitmap_t prev_img;
   bitmap_t curr_img;
-
+#endif /*WITHOUT_WINDOW_ANIMATOR_CACHE*/
   bool_t open;
   float_t ratio;
   float_t percent;
@@ -152,11 +153,11 @@ struct _window_animator_t {
  * 更新动画。
  * @param {window_animator_t*} wa 窗口动画对象。
  * @param {canvas_t*} canvas 画布对象。
- * @param {uint32_t} time_ms 当前时间(毫秒)。
+ * @param {uint64_t} time_ms 当前时间(毫秒)。
  *
  * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
  */
-ret_t window_animator_update(window_animator_t* wa, uint32_t time_ms);
+ret_t window_animator_update(window_animator_t* wa, uint64_t time_ms);
 
 /**
  * @method window_animator_begin_frame

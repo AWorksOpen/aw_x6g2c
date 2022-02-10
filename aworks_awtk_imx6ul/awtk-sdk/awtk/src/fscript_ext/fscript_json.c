@@ -23,14 +23,14 @@
 #include "tkc/data_reader_mem.h"
 #include "tkc/data_writer_wbuffer.h"
 
-typedef object_t* (*json_load_t)(const char* url, bool_t create);
-typedef ret_t (*json_save_t)(object_t* obj, const char* url);
+typedef tk_object_t* (*json_load_t)(const char* url, bool_t create);
+typedef ret_t (*json_save_t)(tk_object_t* obj, const char* url);
 
 static ret_t func_json_load_ex(fscript_t* fscript, fscript_args_t* args, value_t* result,
                                json_load_t load) {
   value_t* v = NULL;
   uint32_t size = 0;
-  object_t* obj = NULL;
+  tk_object_t* obj = NULL;
   const void* data = NULL;
   char url[MAX_PATH + 1];
   FSCRIPT_FUNC_CHECK(args->size >= 1, RET_BAD_PARAMS);
@@ -64,9 +64,9 @@ static ret_t func_json_load_ex(fscript_t* fscript, fscript_args_t* args, value_t
 }
 
 static ret_t func_json_save_ex(fscript_t* fscript, fscript_args_t* args, value_t* result,
-                               json_save_t save) {
+                               json_save_t save, uint32_t result_type) {
   wbuffer_t wb;
-  object_t* obj = NULL;
+  tk_object_t* obj = NULL;
   char url[MAX_PATH + 1];
   wbuffer_init_extendable(&wb);
   FSCRIPT_FUNC_CHECK(args->size == 1, RET_BAD_PARAMS);
@@ -76,7 +76,11 @@ static ret_t func_json_save_ex(fscript_t* fscript, fscript_args_t* args, value_t
 
   data_writer_wbuffer_build_url(&wb, url);
   if (save(obj, url) == RET_OK) {
-    value_set_binary_data(result, wb.data, wb.cursor);
+    if (result_type == VALUE_TYPE_BINARY) {
+      value_set_binary_data(result, wb.data, wb.cursor);
+    } else if (result_type == VALUE_TYPE_STRING) {
+      value_set_str(result, (const char*)wb.data);
+    }
     result->free_handle = TRUE;
     return RET_OK;
   }
@@ -90,7 +94,11 @@ static ret_t func_json_load(fscript_t* fscript, fscript_args_t* args, value_t* r
 }
 
 static ret_t func_json_save(fscript_t* fscript, fscript_args_t* args, value_t* result) {
-  return func_json_save_ex(fscript, args, result, conf_json_save_as);
+  return func_json_save_ex(fscript, args, result, conf_json_save_as, VALUE_TYPE_BINARY);
+}
+
+static ret_t func_json_save_to_string(fscript_t* fscript, fscript_args_t* args, value_t* result) {
+  return func_json_save_ex(fscript, args, result, conf_json_save_as, VALUE_TYPE_STRING);
 }
 
 static ret_t func_ubjson_load(fscript_t* fscript, fscript_args_t* args, value_t* result) {
@@ -98,14 +106,17 @@ static ret_t func_ubjson_load(fscript_t* fscript, fscript_args_t* args, value_t*
 }
 
 static ret_t func_ubjson_save(fscript_t* fscript, fscript_args_t* args, value_t* result) {
-  return func_json_save_ex(fscript, args, result, conf_ubjson_save_as);
+  return func_json_save_ex(fscript, args, result, conf_ubjson_save_as, VALUE_TYPE_BINARY);
 }
 
-ret_t fscript_json_register(void) {
-  ENSURE(fscript_register_func("json_load", func_json_load) == RET_OK);
-  ENSURE(fscript_register_func("json_save", func_json_save) == RET_OK);
-  ENSURE(fscript_register_func("ubjson_load", func_ubjson_load) == RET_OK);
-  ENSURE(fscript_register_func("ubjson_save", func_ubjson_save) == RET_OK);
+FACTORY_TABLE_BEGIN(s_ext_json)
+FACTORY_TABLE_ENTRY("json_load", func_json_load)
+FACTORY_TABLE_ENTRY("json_save", func_json_save)
+FACTORY_TABLE_ENTRY("json_save_to_string", func_json_save_to_string)
+FACTORY_TABLE_ENTRY("ubjson_load", func_ubjson_load)
+FACTORY_TABLE_ENTRY("ubjson_save", func_ubjson_save)
+FACTORY_TABLE_END()
 
-  return RET_OK;
+ret_t fscript_json_register(void) {
+  return fscript_register_funcs(s_ext_json);
 }

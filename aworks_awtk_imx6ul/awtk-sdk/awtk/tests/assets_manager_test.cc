@@ -156,6 +156,7 @@ TEST(AssetsManager, load_assets_refcount) {
   assets_manager_t* rm = assets_manager_create(10);
 
   ASSERT_EQ(load_assets_refcount_is_no_problem(rm, ASSET_TYPE_UI, "main"), TRUE);
+  ASSERT_EQ(load_assets_refcount_is_no_problem(rm, ASSET_TYPE_IMAGE, "0"), TRUE);
   ASSERT_EQ(load_assets_refcount_is_no_problem(rm, ASSET_TYPE_IMAGE, "earth"), TRUE);
   ASSERT_EQ(load_assets_refcount_is_no_problem(rm, ASSET_TYPE_SCRIPT, "dummy"), TRUE);
   ASSERT_EQ(load_assets_refcount_is_no_problem(rm, ASSET_TYPE_XML, "test"), TRUE);
@@ -166,6 +167,7 @@ TEST(AssetsManager, load_assets_refcount) {
   ASSERT_EQ(load_assets_refcount_is_no_problem(rm, ASSET_TYPE_STRINGS, "zh_CN"), TRUE);
 
   ASSERT_EQ(file_path_load_assets_refcount_is_no_problem(rm, ASSET_TYPE_UI, "main.bin"), TRUE);
+  ASSERT_EQ(file_path_load_assets_refcount_is_no_problem(rm, ASSET_TYPE_IMAGE, "0"), TRUE);
   ASSERT_EQ(file_path_load_assets_refcount_is_no_problem(rm, ASSET_TYPE_IMAGE, "earth.png"), TRUE);
   ASSERT_EQ(file_path_load_assets_refcount_is_no_problem(rm, ASSET_TYPE_SCRIPT, "dummy.js"), TRUE);
   ASSERT_EQ(file_path_load_assets_refcount_is_no_problem(rm, ASSET_TYPE_XML, "test.xml"), TRUE);
@@ -186,7 +188,7 @@ TEST(AssetsManager, file_image) {
 
   r = assets_manager_ref(rm, ASSET_TYPE_IMAGE, "earth");
   ASSERT_EQ(r != NULL, true);
-  ASSERT_EQ(r->refcount, 1);
+  ASSERT_EQ(r->refcount, 1u);
   ASSERT_EQ(assets_manager_unref(rm, r), RET_OK);
 
   assets_manager_destroy(rm);
@@ -231,17 +233,17 @@ TEST(AssetsManager, file_script) {
 
   r = assets_manager_ref(rm, ASSET_TYPE_SCRIPT, "dummy");
   ASSERT_EQ(r != NULL, true);
-  ASSERT_EQ(r->refcount, 1);
+  ASSERT_EQ(r->refcount, 1u);
 
   ASSERT_EQ(assets_manager_add(rm, r), RET_OK);
-  ASSERT_EQ(r->refcount, 2);
+  ASSERT_EQ(r->refcount, 2u);
 
   r = assets_manager_find_in_cache(rm, ASSET_TYPE_SCRIPT, 0, "dummy");
   ASSERT_EQ(r != NULL, true);
 
   ASSERT_EQ(assets_manager_unref(rm, r), RET_OK);
   r = assets_manager_find_in_cache(rm, ASSET_TYPE_SCRIPT, 0, "dummy");
-  ASSERT_EQ(r->refcount, 1);
+  ASSERT_EQ(r->refcount, 1u);
 
   assets_manager_destroy(rm);
 }

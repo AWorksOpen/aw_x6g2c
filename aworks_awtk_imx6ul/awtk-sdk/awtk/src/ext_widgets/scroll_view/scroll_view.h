@@ -181,6 +181,16 @@ typedef struct _scroll_view_t {
  */
 
 /**
+ * @event {event_t} EVT_PAGE_CHANGED
+ * 页面改变事件。
+ */
+
+/**
+ * @event {event_t} EVT_PAGE_CHANGING
+ * 页面正在改变。
+ */
+
+/**
  * @method scroll_view_create
  * 创建scroll_view对象
  * @annotation ["constructor", "scriptable"]

@@ -116,7 +116,7 @@ ret_t list_view_h_set_item_width(widget_t* widget, int32_t item_width);
  *
  * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
  */
-ret_t list_view_h_set_spacing(widget_t* widget, bool_t spacing);
+ret_t list_view_h_set_spacing(widget_t* widget, int32_t spacing);
 
 /**
  * @method list_view_h_cast

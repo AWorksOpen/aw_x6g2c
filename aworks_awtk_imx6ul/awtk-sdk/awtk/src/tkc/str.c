@@ -54,7 +54,7 @@ str_t* str_init(str_t* str, uint32_t capacity) {
 }
 
 ret_t str_set(str_t* str, const char* text) {
-  return str_set_with_len(str, text, 0xffff);
+  return str_set_with_len(str, text, 0xffffffff);
 }
 
 ret_t str_clear(str_t* str) {
@@ -72,9 +72,7 @@ ret_t str_set_with_len(str_t* str, const char* text, uint32_t len) {
   return_value_if_fail(str != NULL && text != NULL, RET_BAD_PARAMS);
 
   size = strlen(text);
-  if (len <= size) {
-    size = len;
-  }
+  size = tk_min(size, len);
   return_value_if_fail(str_extend(str, size + 1) == RET_OK, RET_BAD_PARAMS);
 
   tk_strncpy(str->str, text, size);
@@ -131,11 +129,36 @@ ret_t str_append_int(str_t* str, int32_t value) {
   return str_append(str, num);
 }
 
+ret_t str_append_int64(str_t* str, int64_t value) {
+  char num[32];
+  tk_snprintf(num, sizeof(num), "%" PRId64, value);
+
+  return str_append(str, num);
+}
+
+ret_t str_append_uint64(str_t* str, uint64_t value) {
+  char num[32];
+  tk_snprintf(num, sizeof(num), "%" PRIu64, value);
+
+  return str_append(str, num);
+}
+
 ret_t str_append_char(str_t* str, char c) {
   return_value_if_fail(str != NULL, RET_BAD_PARAMS);
   return_value_if_fail(str_extend(str, str->size + 2) == RET_OK, RET_BAD_PARAMS);
 
   str->str[str->size++] = c;
+  str->str[str->size] = '\0';
+
+  return RET_OK;
+}
+
+ret_t str_append_n_chars(str_t* str, char c, uint32_t n) {
+  return_value_if_fail(str != NULL, RET_BAD_PARAMS);
+  return_value_if_fail(str_extend(str, str->size + n + 1) == RET_OK, RET_BAD_PARAMS);
+
+  memset(str->str + str->size, c, n);
+  str->size += n;
   str->str[str->size] = '\0';
 
   return RET_OK;
@@ -293,7 +316,7 @@ ret_t str_from_wstr_with_len(str_t* str, const wchar_t* wstr, uint32_t len) {
   }
 
   if (wstr != NULL) {
-    uint32_t size = len * 4 + 1;
+    uint32_t size = len * 6 + 1;
     return_value_if_fail(str_extend(str, size + 1) == RET_OK, RET_OOM);
 
     if (size > 0) {
@@ -545,7 +568,7 @@ ret_t str_remove(str_t* s, uint32_t offset, uint32_t size) {
   return RET_OK;
 }
 
-static const char* expand_var(str_t* str, const char* p, const object_t* obj) {
+static const char* expand_var(str_t* str, const char* p, const tk_object_t* obj) {
   value_t v;
   uint32_t len = 0;
   char name[TK_NAME_LEN + 1];
@@ -556,7 +579,7 @@ static const char* expand_var(str_t* str, const char* p, const object_t* obj) {
   return_value_if_fail(len <= TK_NAME_LEN, end + 1);
 
   tk_strncpy(name, p, len);
-  if (object_eval((object_t*)obj, name, &v) != RET_OK) {
+  if (tk_object_eval((tk_object_t*)obj, name, &v) != RET_OK) {
     value_reset(&v);
 
     return end + 1;
@@ -574,7 +597,7 @@ static const char* expand_var(str_t* str, const char* p, const object_t* obj) {
   return end + 1;
 }
 
-ret_t str_expand_vars(str_t* str, const char* src, const object_t* obj) {
+ret_t str_expand_vars(str_t* str, const char* src, const tk_object_t* obj) {
   const char* p = src;
   return_value_if_fail(str != NULL && src != NULL && obj != NULL, RET_BAD_PARAMS);
 
@@ -710,4 +733,44 @@ ret_t str_decode_hex(str_t* str, uint8_t* data, uint32_t size) {
   }
 
   return RET_OK;
+}
+
+ret_t str_common_prefix(str_t* str, const char* other) {
+  uint32_t i = 0;
+  return_value_if_fail(str != NULL && other != NULL, RET_BAD_PARAMS);
+
+  for (i = 0; i < str->size && other[i] != '\0'; i++) {
+    if (str->str[i] != other[i]) {
+      break;
+    }
+  }
+  str->str[i] = '\0';
+  str->size = i;
+
+  return RET_OK;
+}
+
+ret_t str_reverse(str_t* str) {
+  return_value_if_fail(str != NULL, RET_BAD_PARAMS);
+
+  if (str->size > 1) {
+    char* start = str->str;
+    char* end = str->str + str->size - 1;
+
+    while (start < end) {
+      char c = *start;
+      *start = *end;
+      *end = c;
+      start++;
+      end--;
+    }
+  }
+
+  return RET_OK;
+}
+
+uint32_t str_count(str_t* str, const char* substr) {
+  return_value_if_fail(str != NULL && substr != NULL, 0);
+
+  return str_count_sub_str(str, substr);
 }

@@ -71,17 +71,25 @@ BEGIN_C_DECLS
 typedef struct _progress_bar_t {
   widget_t widget;
   /**
-   * @property {float_t} value
+   * @property {double} value
    * @annotation ["set_prop","get_prop","readable","persitent","design","scriptable"]
    * 进度条的值[0-max]。
    */
-  float_t value;
+  double value;
   /**
-   * @property {float_t} max
+   * @property {double} max
    * @annotation ["set_prop","get_prop","readable","persitent","design","scriptable"]
    * 最大值(缺省为100)。
    */
-  float_t max;
+  double max;
+
+  /**
+   * @property {char*} format
+   * @annotation ["set_prop","get_prop","readable","persitent","design","scriptable"]
+   * 数值到字符串转换时的格式，缺省为"%d"。
+   */
+  char* format;
+
   /**
    * @property {bool_t} vertical
    * @annotation ["set_prop","get_prop","readable","persitent","design","scriptable"]
@@ -103,12 +111,12 @@ typedef struct _progress_bar_t {
 } progress_bar_t;
 
 /**
- * @event {event_t} EVT_VALUE_WILL_CHANGE
+ * @event {value_change_event_t} EVT_VALUE_WILL_CHANGE
  * 值即将改变事件。
  */
 
 /**
- * @event {event_t} EVT_VALUE_CHANGED
+ * @event {value_change_event_t} EVT_VALUE_CHANGED
  * 值改变事件。
  */
 
@@ -141,11 +149,11 @@ widget_t* progress_bar_cast(widget_t* widget);
  * 设置进度条的进度。
  * @annotation ["scriptable"]
  * @param {widget_t*} widget 控件对象。
- * @param {float_t}  value 进度
+ * @param {double}  value 进度
  *
  * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
  */
-ret_t progress_bar_set_value(widget_t* widget, float_t value);
+ret_t progress_bar_set_value(widget_t* widget, double value);
 
 /**
  * @method progress_bar_set_max
@@ -153,11 +161,22 @@ ret_t progress_bar_set_value(widget_t* widget, float_t value);
  *
  * @annotation ["scriptable"]
  * @param {widget_t*} widget 控件对象。
- * @param {uint32_t}  max 最大值。
+ * @param {double}  max 最大值。
  *
  * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
  */
-ret_t progress_bar_set_max(widget_t* widget, float_t max);
+ret_t progress_bar_set_max(widget_t* widget, double max);
+
+/**
+ * @method progress_bar_set_format
+ * 设置格式。
+ * @annotation ["scriptable"]
+ * @param {widget_t*} widget progress_bar对象。
+ * @param {const char*} format 格式。
+ *
+ * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
+ */
+ret_t progress_bar_set_format(widget_t* widget, const char* format);
 
 /**
  * @method progress_bar_set_vertical

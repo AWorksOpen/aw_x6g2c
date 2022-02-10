@@ -8,7 +8,7 @@
 
 window\_t是[window\_base\_t](window_base_t.md)的子类控件，window\_base\_t的函数均适用于window\_t控件。
 
-在xml中使用"window"标签创建窗口。无需指定坐标和大小，可以指定主题和动画名称。如：
+在xml中使用"window"标签创建窗口。无需指定坐标和大小，可以指定窗体样式和动画名称。如：
 
 ```xml
 <window theme="basic" anim_hint="htranslate">
@@ -76,7 +76,7 @@ default](https://github.com/zlgopen/awtk/blob/master/design/default/styles/defau
 * 函数原型：
 
 ```
-ret_t image_blend (bitmap_t* dst, bitmap_t* src, const rect_t* dst_r, const rect_t* src_r, uint8_t global_alpha);
+ret_t image_blend (bitmap_t* dst, bitmap_t* src, const rectf_t* dst_r, const rectf_t* src_r, uint8_t global_alpha);
 ```
 
 * 参数说明：
@@ -86,8 +86,8 @@ ret_t image_blend (bitmap_t* dst, bitmap_t* src, const rect_t* dst_r, const rect
 | 返回值 | ret\_t | 返回RET\_OK表示成功，否则表示失败，返回失败则上层用软件实现。 |
 | dst | bitmap\_t* | 目标图片对象。 |
 | src | bitmap\_t* | 源图片对象。 |
-| dst\_r | const rect\_t* | 目的区域。 |
-| src\_r | const rect\_t* | 源区域。 |
+| dst\_r | const rectf\_t* | 目的区域。 |
+| src\_r | const rectf\_t* | 源区域。 |
 | global\_alpha | uint8\_t | 全局alpha。 |
 #### image\_clear 函数
 -----------------------
@@ -362,7 +362,7 @@ ret_t window_set_fullscreen (widget_t* widget, bool_t fullscreen);
 -----------------------
 > <p id="window_t_fullscreen">是否全屏。
 
->这里全屏是指与LCD相同大小，而非让SDL窗口全屏。
+>对于模拟器，全屏是让窗口和LCD具有相同大小，而非让SDL窗口全屏。
 
 * 类型：bool\_t
 

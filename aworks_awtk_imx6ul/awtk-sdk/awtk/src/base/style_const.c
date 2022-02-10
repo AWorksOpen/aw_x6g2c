@@ -76,20 +76,30 @@ static const void* widget_get_const_style_data(widget_t* widget, style_t* s) {
   return data;
 }
 
-static ret_t style_const_apply_layout(style_t* s, widget_t* widget) {
+static ret_t style_const_apply_props(style_t* s, widget_t* widget) {
   const char* self_layout = style_get_str(s, STYLE_ID_SELF_LAYOUT, NULL);
   const char* children_layout = style_get_str(s, STYLE_ID_CHILDREN_LAYOUT, NULL);
+  const char* focusable = style_get_str(s, STYLE_ID_FOCUSABLE, NULL);
+  const char* feedback = style_get_str(s, STYLE_ID_FEEDBACK, NULL);
 
   if (self_layout != NULL || children_layout != NULL) {
     if (self_layout != NULL) {
       widget_set_self_layout(widget, self_layout);
-      widget_set_need_relayout_children(widget->parent);
+      widget_set_need_relayout(widget);
     }
 
     if (children_layout != NULL) {
       widget_set_children_layout(widget, children_layout);
       widget_set_need_relayout_children(widget);
     }
+  }
+
+  if (focusable != NULL) {
+    widget->focusable = *focusable == 'T' || *focusable == 't';
+  }
+
+  if (feedback != NULL) {
+    widget->feedback = *feedback == 'T' || *feedback == 't';
   }
 
   return RET_OK;
@@ -106,7 +116,7 @@ static ret_t style_const_notify_widget_state_changed(style_t* s, widget_t* widge
   style->data = widget_get_const_style_data(widget, s);
 
   if (old_data != style->data) {
-    style_const_apply_layout(s, widget);
+    style_const_apply_props(s, widget);
   }
 
   return RET_OK;
@@ -144,6 +154,12 @@ static color_t style_const_get_color(style_t* s, const char* name, color_t defva
   style_const_t* style = (style_const_t*)s;
 
   return style_data_get_color(style->data, name, defval);
+}
+
+static gradient_t* style_const_get_gradient(style_t* s, const char* name, gradient_t* gradient) {
+  style_const_t* style = (style_const_t*)s;
+
+  return style_data_get_gradient(style->data, name, gradient);
 }
 
 static const char* style_const_get_str(style_t* s, const char* name, const char* defval) {
@@ -198,12 +214,13 @@ static const style_vtable_t style_const_vt = {
     .get_uint = style_const_get_uint,
     .get_str = style_const_get_str,
     .get_color = style_const_get_color,
+    .get_gradient = style_const_get_gradient,
     .get_style_type = style_const_get_style_type,
     .get_style_state = style_const_get_style_state,
     .set_style_data = style_const_set_style_data,
     .destroy = style_const_destroy};
 
-style_t* style_const_create() {
+style_t* style_const_create(void) {
   style_const_t* style = TKMEM_ZALLOC(style_const_t);
   return_value_if_fail(style != NULL, NULL);
 

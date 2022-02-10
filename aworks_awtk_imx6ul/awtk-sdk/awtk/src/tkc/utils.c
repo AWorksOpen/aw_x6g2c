@@ -220,6 +220,16 @@ double tk_atof(const char* str) {
   return atof(str);
 }
 
+int32_t tk_strtoi(const char* str, const char** end, int base) {
+  long ret = tk_strtol(str, end, base);
+  if (ret > INT32_MAX) {
+    ret = INT32_MAX;
+  } else if (ret < INT32_MIN) {
+    ret = INT32_MIN;
+  }
+  return (int32_t)ret;
+}
+
 long tk_strtol(const char* str, const char** end, int base) {
   return_value_if_fail(str != NULL, 0);
 
@@ -246,14 +256,14 @@ const char* tk_itoa(char* str, int len, int n) {
 #define IS_HEX_NUM(s) (s[0] == '0' && (s[1] == 'x' || s[1] == 'X'))
 #define IS_BIN_NUM(s) (s[0] == '0' && (s[1] == 'b' || s[1] == 'B'))
 
-int tk_atoi(const char* str) {
+int32_t tk_atoi(const char* str) {
   return_value_if_fail(str != NULL, 0);
   if (IS_HEX_NUM(str)) {
-    return tk_strtol(str + 2, NULL, 16);
+    return tk_strtoi(str + 2, NULL, 16);
   } else if (IS_BIN_NUM(str)) {
-    return tk_strtol(str + 2, NULL, 2);
+    return tk_strtoi(str + 2, NULL, 2);
   } else {
-    return tk_strtol(str, NULL, 10);
+    return tk_strtoi(str, NULL, 10);
   }
 }
 
@@ -853,6 +863,21 @@ bool_t tk_str_start_with(const char* str, const char* prefix) {
   return strncmp(str, prefix, strlen(prefix)) == 0;
 }
 
+bool_t tk_str_end_with(const char* str, const char* appendix) {
+  uint32_t len_str = 0;
+  uint32_t len_appendix = 0;
+  return_value_if_fail(str != NULL && appendix != NULL, FALSE);
+
+  len_str = strlen(str);
+  len_appendix = strlen(appendix);
+
+  if (len_str < len_appendix) {
+    return FALSE;
+  } else {
+    return strncmp(str + len_str - len_appendix, appendix, len_appendix) == 0;
+  }
+}
+
 const char* tk_under_score_to_camel(const char* name, char* out, uint32_t max_out_size) {
   uint32_t i = 0;
   const char* s = name;
@@ -890,6 +915,24 @@ char* tk_str_toupper(char* str) {
 
   while (*p) {
     *p = toupper(*p);
+    p++;
+  }
+
+  return str;
+}
+
+char* tk_str_totitle(char* str) {
+  char* p = str;
+  char* prev = str;
+  return_value_if_fail(str != NULL, NULL);
+
+  while (*p) {
+    if (tk_isalpha(*p)) {
+      if (p == str || (!tk_isalpha(*prev) && !tk_isdigit(*prev))) {
+        *p = toupper(*p);
+      }
+    }
+    prev = p;
     p++;
   }
 
@@ -999,7 +1042,7 @@ ret_t image_region_parse(uint32_t img_w, uint32_t img_h, const char* region, rec
 }
 
 typedef struct _to_json_ctx_t {
-  object_t* obj;
+  tk_object_t* obj;
   str_t* str;
   uint32_t index;
 } to_json_ctx_t;
@@ -1028,7 +1071,7 @@ static ret_t to_json_on_prop(void* ctx, const void* data) {
     str_append_char(info->str, ',');
   }
 
-  if (!object_is_collection(info->obj)) {
+  if (!tk_object_is_collection(info->obj)) {
     str_append_more(info->str, "\"", nv->name, "\":", NULL);
   }
 
@@ -1064,17 +1107,17 @@ static ret_t to_json_on_prop(void* ctx, const void* data) {
   return RET_OK;
 }
 
-ret_t object_to_json(object_t* obj, str_t* str) {
+ret_t object_to_json(tk_object_t* obj, str_t* str) {
   to_json_ctx_t ctx = {obj, str, 0};
   return_value_if_fail(obj != NULL && str != NULL, RET_BAD_PARAMS);
 
-  if (object_is_collection(obj)) {
+  if (tk_object_is_collection(obj)) {
     str_set(str, "[");
-    object_foreach_prop(obj, to_json_on_prop, &ctx);
+    tk_object_foreach_prop(obj, to_json_on_prop, &ctx);
     str_append_char(str, ']');
   } else {
     str_set(str, "{");
-    object_foreach_prop(obj, to_json_on_prop, &ctx);
+    tk_object_foreach_prop(obj, to_json_on_prop, &ctx);
     str_append_char(str, '}');
   }
 
@@ -1117,3 +1160,81 @@ ret_t data_url_copy(const char* dst_url, const char* src_url) {
   return ret;
 }
 #endif /*WITH_DATA_READER_WRITER*/
+
+static void tk_quick_sort_impl(void** array, size_t left, size_t right, tk_compare_t cmp) {
+  size_t save_left = left;
+  size_t save_right = right;
+  void* x = array[left];
+
+  while (left < right) {
+    while (cmp(array[right], x) >= 0 && left < right) right--;
+    if (left != right) {
+      array[left] = array[right];
+      left++;
+    }
+
+    while (cmp(array[left], x) <= 0 && left < right) left++;
+    if (left != right) {
+      array[right] = array[left];
+      right--;
+    }
+  }
+  array[left] = x;
+
+  if (save_left < left) {
+    tk_quick_sort_impl(array, save_left, left - 1, cmp);
+  }
+
+  if (save_right > left) {
+    tk_quick_sort_impl(array, left + 1, save_right, cmp);
+  }
+
+  return;
+}
+
+ret_t tk_qsort(void** array, size_t nr, tk_compare_t cmp) {
+  ret_t ret = RET_OK;
+
+  return_value_if_fail(array != NULL && cmp != NULL, RET_BAD_PARAMS);
+
+  if (nr > 1) {
+    tk_quick_sort_impl(array, 0, nr - 1, cmp);
+  }
+
+  return ret;
+}
+
+const char* tk_strrstr(const char* str, const char* substr) {
+  char c = 0;
+  uint32_t len = 0;
+  const char* p = NULL;
+  const char* end = NULL;
+  return_value_if_fail(str != NULL && substr != NULL, NULL);
+
+  c = *substr;
+  len = strlen(substr);
+  end = str + strlen(str) - 1;
+
+  for (p = end; p >= str; p--) {
+    if (*p == c) {
+      if (strncmp(p, substr, len) == 0) {
+        return p;
+      }
+    }
+  }
+
+  return NULL;
+}
+
+bool_t tk_str_is_in_array(const char* str, const char** str_array, uint32_t array_size) {
+  uint32_t i = 0;
+  return_value_if_fail(str != NULL && str_array != NULL && array_size > 0, FALSE);
+
+  for (i = 0; i < array_size; i++) {
+    if (tk_str_eq(str, str_array[i])) {
+      return TRUE;
+    }
+  }
+
+  return FALSE;
+}

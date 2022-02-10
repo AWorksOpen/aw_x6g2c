@@ -62,11 +62,12 @@ typedef struct _emitter_t {
    */
   uint32_t next_id;
   /**
-   * @property {bool_t} enable
+   * @property {int32_t} disable
    * @annotation ["readable"]
    * 禁用标志。禁用时dispatch无效。
    */
-  bool_t enable;
+  int32_t disable;
+
   /**
    * @property {bool_t} remove_curr_iter
    * @annotation ["private"]
@@ -119,7 +120,7 @@ ret_t emitter_dispatch(emitter_t* emitter, event_t* e);
  * > 对emitter_dispatch的包装，分发一个简单的事件。
  * @annotation ["scriptable"]
  * @param {emitter_t*} emitter emitter对象。
- * @param {event_type_t} type 事件类型。
+ * @param {uint32_t} type 事件类型。
  * @return {ret_t}
  *  如果当前分发的回调函数返回RET_STOP，dispatch中断分发，并返回RET_STOP，否则返回RET_OK。
  */

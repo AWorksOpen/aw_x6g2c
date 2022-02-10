@@ -60,7 +60,8 @@ struct _main_loop_t {
   uint8_t running;
   uint8_t quit_num;
   bool_t app_quited;
-  uint32_t last_loop_time;
+  uint64_t last_loop_time;
+  uint32_t curr_expected_sleep_time;
   widget_t* wm;
 };
 
@@ -84,11 +85,20 @@ ret_t main_loop_queue_event(main_loop_t* l, const event_queue_req_t* e);
 ret_t main_loop_recv_event(main_loop_t* l, event_queue_req_t* r);
 ret_t main_loop_destroy(main_loop_t* l);
 
+/**
+ * @method main_loop_step
+ * 执行一次迭代。
+ * @param {main_loop_t*} l main_loop对象。
+ * 
+ *
+ * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
+ */
 ret_t main_loop_step(main_loop_t* l);
-ret_t main_loop_sleep(main_loop_t* l);
 
+ret_t main_loop_sleep(main_loop_t* l);
 /*event_source*/
 event_source_manager_t* main_loop_get_event_source_manager(main_loop_t* l);
+
 /**
  * @method main_loop_add_event_source
  * 添加event_source。
@@ -119,6 +129,9 @@ ret_t main_loop_remove_event_source(main_loop_t* l, event_source_t* source);
  * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
  */
 ret_t main_loop_remove_event_source_by_tag(main_loop_t* l, void* tag);
+
+/* private */
+ret_t main_loop_set_curr_expected_sleep_time(main_loop_t* l, uint32_t sleep_time);
 
 END_C_DECLS
 

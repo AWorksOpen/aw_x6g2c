@@ -24,6 +24,7 @@
 
 #include "tkc/color.h"
 #include "base/theme.h"
+#include "base/gradient.h"
 #include "base/widget_consts.h"
 
 BEGIN_C_DECLS
@@ -244,10 +245,10 @@ BEGIN_C_DECLS
 #define STYLE_ID_ROUND_RADIUS "round_radius"
 
 /**
- * @const STYLE_ID_ROUND_RADIUS_TOP_LETF
+ * @const STYLE_ID_ROUND_RADIUS_TOP_LEFT
  * 左上角圆角半径(仅在WITH_VGCANVAS定义时生效)。
  */
-#define STYLE_ID_ROUND_RADIUS_TOP_LETF "round_radius_top_left"
+#define STYLE_ID_ROUND_RADIUS_TOP_LEFT "round_radius_top_left"
 
 /**
  * @const STYLE_ID_ROUND_RADIUS_TOP_RIGHT
@@ -256,10 +257,10 @@ BEGIN_C_DECLS
 #define STYLE_ID_ROUND_RADIUS_TOP_RIGHT "round_radius_top_right"
 
 /**
- * @const STYLE_ID_ROUND_RADIUS_BOTTOM_LETF
+ * @const STYLE_ID_ROUND_RADIUS_BOTTOM_LEFT
  * 左下角圆角半径(仅在WITH_VGCANVAS定义时生效)。
  */
-#define STYLE_ID_ROUND_RADIUS_BOTTOM_LETF "round_radius_bottom_left"
+#define STYLE_ID_ROUND_RADIUS_BOTTOM_LEFT "round_radius_bottom_left"
 
 /**
  * @const STYLE_ID_ROUND_RADIUS_BOTTOM_RIGHT
@@ -279,6 +280,18 @@ BEGIN_C_DECLS
  */
 #define STYLE_ID_SELF_LAYOUT "self_layout"
 
+/**
+ * @const STYLE_ID_FOCUSABLE
+ * 是否支持焦点停留。
+ */
+#define STYLE_ID_FOCUSABLE "focusable"
+
+/**
+ * @const STYLE_ID_FEEDBACK
+ * 是否启用按键音、触屏音和震动等反馈。
+ */
+#define STYLE_ID_FEEDBACK "feedback"
+
 struct _style_t;
 typedef struct _style_t style_t;
 
@@ -286,6 +299,7 @@ typedef bool_t (*style_is_valid_t)(style_t* s);
 typedef int32_t (*style_get_int_t)(style_t* s, const char* name, int32_t defval);
 typedef uint32_t (*style_get_uint_t)(style_t* s, const char* name, uint32_t defval);
 typedef color_t (*style_get_color_t)(style_t* s, const char* name, color_t defval);
+typedef gradient_t* (*style_get_gradient_t)(style_t* s, const char* name, gradient_t* gradient);
 typedef const char* (*style_get_str_t)(style_t* s, const char* name, const char* defval);
 
 typedef ret_t (*style_set_t)(style_t* s, const char* state, const char* name, const value_t* value);
@@ -307,6 +321,7 @@ typedef struct _style_vtable_t {
   style_get_uint_t get_uint;
   style_get_str_t get_str;
   style_get_color_t get_color;
+  style_get_gradient_t get_gradient;
   style_update_state_t update_state;
   style_notify_widget_state_changed_t notify_widget_state_changed;
 
@@ -395,6 +410,17 @@ uint32_t style_get_uint(style_t* s, const char* name, uint32_t defval);
 color_t style_get_color(style_t* s, const char* name, color_t defval);
 
 /**
+ * @method style_get_gradient
+ * 获取指定name的渐变颜色值。
+ * @param {style_t*} s style对象。
+ * @param {const char*} name 属性名。
+ * @param {gradient_t*} gradient 返回值。
+ *
+ * @return {gradient_t*} 返回渐变颜色值。
+ */
+gradient_t* style_get_gradient(style_t* s, const char* name, gradient_t* gradient);
+
+/**
  * @method style_get_str
  * 获取指定name的字符串格式的值。
  * @annotation ["scriptable"]
@@ -422,7 +448,6 @@ ret_t style_set(style_t* s, const char* state, const char* name, const value_t* 
 /**
  * @method style_set_style_data
  * 把风格对象数据设置到风格对象中
- * @annotation ["scriptable"]
  * @param {style_t*} s style对象。
  * @param {const uint8_t*} data 风格对象数据
  * @param {const char*} state 风格状态
@@ -497,6 +522,10 @@ ret_t style_destroy(style_t* s);
  * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
  */
 ret_t style_normalize_value(const char* name, const char* value, value_t* out);
+
+/*for compatibility*/
+#define STYLE_ID_ROUND_RADIUS_BOTTOM_LETF STYLE_ID_ROUND_RADIUS_BOTTOM_LEFT
+#define STYLE_ID_ROUND_RADIUS_TOP_LETF STYLE_ID_ROUND_RADIUS_TOP_LEFT
 
 END_C_DECLS
 

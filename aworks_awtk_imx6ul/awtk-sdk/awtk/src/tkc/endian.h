@@ -43,8 +43,7 @@ static inline int16_t int16_endian_invert(int16_t value) {
   int16_t ret = value;
   uint8_t* p = (uint8_t*)&ret;
 
-  p[0] = value >> 8;
-  p[1] = value & 0xff;
+  swap_uint8(p, p + 1);
 
   return ret;
 }

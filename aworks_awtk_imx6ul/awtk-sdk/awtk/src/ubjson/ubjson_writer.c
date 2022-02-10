@@ -46,11 +46,11 @@ static ret_t ubjson_writer_write_marker(ubjson_writer_t* writer, uint8_t marker)
 static ret_t ubjson_writer_write_key_len(ubjson_writer_t* writer, const char* value, uint32_t len) {
   return_value_if_fail(writer != NULL && value != NULL, RET_BAD_PARAMS);
 
-  if (len < 128) {
+  if (len <= INT8_MAX) {
     ubjson_writer_write_int8(writer, (int8_t)len);
-  } else if (len < 0xefff) {
+  } else if (len <= INT16_MAX) {
     ubjson_writer_write_int16(writer, (int16_t)len);
-  } else if (len < 0xefffffff) {
+  } else if (len <= INT_MAX) {
     ubjson_writer_write_int32(writer, (int32_t)len);
   } else {
     return RET_BAD_PARAMS;
@@ -258,14 +258,15 @@ static ret_t on_prop_write_ubjson(void* ctx, const void* data) {
   return ubjson_writer_write_kv_value(writer, nv->name, &(nv->value));
 }
 
-ret_t ubjson_writer_write_object(ubjson_writer_t* writer, object_t* obj) {
+ret_t ubjson_writer_write_object(ubjson_writer_t* writer, tk_object_t* obj) {
   return_value_if_fail(ubjson_writer_write_object_begin(writer) == RET_OK, RET_OOM);
-  return_value_if_fail(object_foreach_prop(obj, on_prop_write_ubjson, writer) == RET_OK, RET_OOM);
+  return_value_if_fail(tk_object_foreach_prop(obj, on_prop_write_ubjson, writer) == RET_OK,
+                       RET_OOM);
 
   return ubjson_writer_write_object_end(writer);
 }
 
-ret_t ubjson_writer_write_kv_object(ubjson_writer_t* writer, const char* key, object_t* value) {
+ret_t ubjson_writer_write_kv_object(ubjson_writer_t* writer, const char* key, tk_object_t* value) {
   return_value_if_fail(writer != NULL && key != NULL && value != NULL, RET_BAD_PARAMS);
   return_value_if_fail(ubjson_writer_write_key(writer, key) == RET_OK, RET_OOM);
 

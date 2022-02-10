@@ -29,6 +29,8 @@
 #include "../egl_devices/egl_devices.h"
 #include "native_window/native_window_fb_gl.h"
 
+static lcd_egl_context_t* s_egl_context_lcd = NULL;
+
 static void on_app_exit(void) {
 
 }
@@ -65,14 +67,35 @@ static ret_t lcd_linux_gles_make_current(native_window_t* win) {
   return ret;
 }
 
-ret_t lcd_linux_egl_destroy(lcd_egl_context_t* lcd) {
+static ret_t lcd_linux_gles_destroy(native_window_t* win) {
   ret_t ret = RET_OK;
+  lcd_egl_context_t* lcd = NULL;
+  return_value_if_fail(win != NULL, RET_BAD_PARAMS);
+
+  lcd = (lcd_egl_context_t*)(win->handle);
   return_value_if_fail(lcd != NULL, RET_BAD_PARAMS);
+
   ret = egl_devices_dispose(lcd->elg_ctx);
   if (ret == RET_OK) {
     TKMEM_FREE(lcd);
   }
-  native_window_fb_gl_deinit();
+  return ret;
+}
+
+static ret_t (*lcd_egl_linux_resize_defalut)(lcd_t* lcd, wh_t w, wh_t h, uint32_t line_length);
+static ret_t lcd_egl_linux_resize(lcd_t* lcd, wh_t w, wh_t h, uint32_t line_length) {
+  ret_t ret = RET_OK;
+
+  ret = egl_devices_resize(s_egl_context_lcd->elg_ctx, w, h);
+  return_value_if_fail(ret == RET_OK, ret);
+
+  s_egl_context_lcd->w = w;
+  s_egl_context_lcd->h = h;
+
+  if (lcd_egl_linux_resize_defalut != NULL) {
+    lcd_egl_linux_resize_defalut(lcd, w, h, line_length);
+  }
+
   return ret;
 }
 
@@ -91,16 +114,24 @@ lcd_egl_context_t* lcd_linux_egl_create(const char* filename) {
   win = native_window_fb_gl_init(lcd->w, lcd->h, lcd->ratio);
   goto_error_if_fail(win != NULL);
 
+  lcd_t* lcd_nanovg = native_window_get_lcd(win);
+  goto_error_if_fail(lcd_nanovg != NULL);
+
+  lcd_egl_linux_resize_defalut = lcd_nanovg->resize;
+  lcd_nanovg->resize = lcd_egl_linux_resize;
+
+  s_egl_context_lcd = lcd;
   win->handle = (void*)lcd;
   native_window_fb_gl_set_swap_buffer_func(win, lcd_linux_gles_swap_buffer);
   native_window_fb_gl_set_make_current_func(win, lcd_linux_gles_make_current);
+  native_window_fb_gl_set_destroy_func(win, lcd_linux_gles_destroy);
 
   atexit(on_app_exit);
   signal(SIGINT, on_signal_int);
 
   return lcd;
 error :
-  lcd_linux_egl_destroy(lcd);
+  native_window_fb_gl_deinit();
   return NULL;
 }
 

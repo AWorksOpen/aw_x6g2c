@@ -10,6 +10,7 @@ using std::string;
 TEST(Utils, basic) {
   char str[32];
 
+  ASSERT_EQ(tk_atoi("0015"), 15);
   ASSERT_EQ(tk_atoi("100"), 100);
   ASSERT_EQ(tk_atoi("0xff"), 0xff);
   ASSERT_EQ(tk_atoi("0x1"), 0x1);
@@ -360,10 +361,20 @@ TEST(Utils, tk_str_start_with) {
   ASSERT_EQ(tk_str_start_with("abc123", "b"), FALSE);
 }
 
+TEST(Utils, tk_str_end_with) {
+  ASSERT_EQ(tk_str_end_with("abc123", "3"), TRUE);
+  ASSERT_EQ(tk_str_end_with("abc123", "23"), TRUE);
+  ASSERT_EQ(tk_str_end_with("abc123", "123"), TRUE);
+  ASSERT_EQ(tk_str_end_with("abc123", ""), TRUE);
+  ASSERT_EQ(tk_str_end_with("abc123", "abc123"), TRUE);
+  ASSERT_EQ(tk_str_end_with("abc123", "a"), FALSE);
+  ASSERT_EQ(tk_str_end_with("abc123", "aabc123"), FALSE);
+}
+
 TEST(Utils, ieq) {
   ASSERT_EQ(strcasecmp("Trigger", "trigger"), 0);
-  ASSERT_EQ(tk_str_ieq("Trigger", "trigger"), TRUE);
-  ASSERT_EQ(tk_str_ieq("Trigger", "Trigger"), TRUE);
+  ASSERT_EQ(tk_str_ieq("Trigger", "trigger"), true);
+  ASSERT_EQ(tk_str_ieq("Trigger", "Trigger"), true);
 }
 
 TEST(Utils, tk_under_score_to_camel) {
@@ -425,9 +436,9 @@ TEST(Utils, tk_str_tolower) {
 }
 
 TEST(Utils, tk_wstr_count_c) {
-  ASSERT_EQ(tk_wstr_count_c(L"", 'a'), 0);
-  ASSERT_EQ(tk_wstr_count_c(L"a", 'a'), 1);
-  ASSERT_EQ(tk_wstr_count_c(L"abcaba", 'a'), 3);
+  ASSERT_EQ(tk_wstr_count_c(L"", 'a'), 0u);
+  ASSERT_EQ(tk_wstr_count_c(L"a", 'a'), 1u);
+  ASSERT_EQ(tk_wstr_count_c(L"abcaba", 'a'), 3u);
 }
 
 TEST(Utils, tk_watoi_n) {
@@ -479,23 +490,23 @@ TEST(Utils, image_region_parse) {
 TEST(Utils, to_json) {
   str_t str;
   value_t v;
-  object_t* obj = object_default_create();
-  object_t* addr = object_default_create();
-  object_t* arr = object_array_create();
-  object_set_prop_str(obj, "name", "jim");
-  object_set_prop_int(obj, "age", 100);
+  tk_object_t* obj = object_default_create();
+  tk_object_t* addr = object_default_create();
+  tk_object_t* arr = object_array_create();
+  tk_object_set_prop_str(obj, "name", "jim");
+  tk_object_set_prop_int(obj, "age", 100);
 
-  object_set_prop_int(arr, "-1", 1);
-  object_set_prop_int(arr, "-1", 2);
-  object_set_prop_str(arr, "-1", "abc");
+  tk_object_set_prop_int(arr, "-1", 1);
+  tk_object_set_prop_int(arr, "-1", 2);
+  tk_object_set_prop_str(arr, "-1", "abc");
   value_set_wstr(&v, L"hello");
-  object_set_prop(arr, "-1", &v);
+  tk_object_set_prop(arr, "-1", &v);
 
-  object_set_prop_str(addr, "country", "zh");
-  object_set_prop_str(addr, "city", "sz");
+  tk_object_set_prop_str(addr, "country", "zh");
+  tk_object_set_prop_str(addr, "city", "sz");
 
-  object_set_prop_object(obj, "addr", addr);
-  object_set_prop_object(obj, "arr", arr);
+  tk_object_set_prop_object(obj, "addr", addr);
+  tk_object_set_prop_object(obj, "arr", arr);
 
   str_init(&str, 1000);
   ASSERT_EQ(object_to_json(obj, &str), RET_OK);
@@ -504,7 +515,74 @@ TEST(Utils, to_json) {
                "\"hello\"],\"name\":\"jim\"}");
 
   str_reset(&str);
-  OBJECT_UNREF(obj);
-  OBJECT_UNREF(arr);
-  OBJECT_UNREF(addr);
+  TK_OBJECT_UNREF(obj);
+  TK_OBJECT_UNREF(arr);
+  TK_OBJECT_UNREF(addr);
+}
+
+TEST(Utils, strrstr) {
+  ASSERT_STREQ(tk_strrstr("abc", "abc"), "abc");
+  ASSERT_STREQ(tk_strrstr("1abc", "abc"), "abc");
+  ASSERT_STREQ(tk_strrstr("1abc2", "abc"), "abc2");
+  ASSERT_STREQ(tk_strrstr("abc abc", "abc"), "abc");
+  ASSERT_STREQ(tk_strrstr("abc abc123", "abc"), "abc123");
+  ASSERT_STREQ(tk_strrstr("abc abc123aaabc", "abc"), "abc");
+
+  ASSERT_EQ(tk_strrstr("bc", "abc") == NULL, true);
+  ASSERT_EQ(tk_strrstr("bc", "123") == NULL, true);
+}
+
+TEST(Utils, totitle) {
+  char str[] = "it is nice!";
+  ASSERT_STREQ(tk_str_totitle(str), "It Is Nice!");
+}
+
+TEST(Utils, isspace) {
+  uint32_t i = 0;
+  const char* str = "（１）这；这个。（２）他（她，它）”，在“，它）";
+  size_t n = strlen(str);
+
+  for (i = 0; i < n; i++) {
+    tk_isspace(str[i]);
+    tk_isdigit(str[i]);
+    tk_isalpha(str[i]);
+    tk_isprint(str[i]);
+    tk_isxdigit(str[i]);
+  }
+
+  bool_t is_s = tk_isspace(' ');
+  ASSERT_EQ(is_s, TRUE);
+  is_s = tk_isspace('\t');
+  ASSERT_EQ(is_s, TRUE);
+  is_s = tk_isspace('\r');
+  ASSERT_EQ(is_s, TRUE);
+  is_s = tk_isspace('\n');
+  ASSERT_EQ(is_s, TRUE);
+  is_s = tk_isdigit('1');
+  ASSERT_EQ(is_s, TRUE);
+  is_s = tk_isdigit('a');
+  ASSERT_EQ(is_s, FALSE);
+  is_s = tk_isxdigit('a');
+  ASSERT_EQ(is_s, TRUE);
+  is_s = tk_isprint('a');
+  ASSERT_EQ(is_s, TRUE);
+  is_s = tk_isalpha('a');
+  ASSERT_EQ(is_s, TRUE);
+}
+
+TEST(Utils, is_in_array) {
+  const char* arr1[] = {"abc"};
+  const char* arr2[] = {"abc", "xyz"};
+  const char* arr3[] = {"abc", "xyz", "123"};
+  ASSERT_EQ(tk_str_is_in_array("abc", arr1, ARRAY_SIZE(arr1)), TRUE);
+  ASSERT_EQ(tk_str_is_in_array("abc", arr2, ARRAY_SIZE(arr2)), TRUE);
+  ASSERT_EQ(tk_str_is_in_array("abc", arr3, ARRAY_SIZE(arr3)), TRUE);
+
+  ASSERT_EQ(tk_str_is_in_array("xyz", arr1, ARRAY_SIZE(arr1)), FALSE);
+  ASSERT_EQ(tk_str_is_in_array("xyz", arr2, ARRAY_SIZE(arr2)), TRUE);
+  ASSERT_EQ(tk_str_is_in_array("xyz", arr3, ARRAY_SIZE(arr3)), TRUE);
+
+  ASSERT_EQ(tk_str_is_in_array("123", arr1, ARRAY_SIZE(arr1)), FALSE);
+  ASSERT_EQ(tk_str_is_in_array("123", arr2, ARRAY_SIZE(arr2)), FALSE);
+  ASSERT_EQ(tk_str_is_in_array("123", arr3, ARRAY_SIZE(arr3)), TRUE);
 }

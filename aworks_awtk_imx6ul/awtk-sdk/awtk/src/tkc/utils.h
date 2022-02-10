@@ -42,9 +42,9 @@ BEGIN_C_DECLS
  *
  * @param {const char*} str 要转换为整型数的字符串。
  *
- * @return {int} 返回转换后的整型。
+ * @return {int32_t} 返回转换后的整型。
  */
-int tk_atoi(const char* str);
+int32_t tk_atoi(const char* str);
 
 /**
  * @method tk_atol
@@ -197,6 +197,19 @@ const char* tk_itoa(char* str, int len, int n);
 const char* tk_ftoa(char* str, int len, double f);
 
 /**
+ * @method tk_strtoi
+ *
+ * 将字符串转换为整型。
+ *
+ * @param {const char*} str 要转换为整型的字符串。
+ * @param {const char**} end 对类型char*的对象的引用。
+ * @param {int} base 基数。
+ *
+ * @return {int32_t} 返回转换后的整型。
+ */
+int32_t tk_strtoi(const char* str, const char** end, int base);
+
+/**
  * @method tk_strtol
  *
  * 将字符串转换为长整型。
@@ -307,6 +320,18 @@ char* tk_strndup(const char* str, uint32_t len);
  * @return {uint32_t} 返回字符串的长度。
  */
 uint32_t tk_strlen(const char* str);
+
+/**
+ * @method tk_strrstr
+ *
+ * 从后往前查找指定的字符串。
+ *
+ * @param {const char*} str 字符串。
+ * @param {const char*} substr 子字符串。
+ *
+ * @return {const char*} 返回字符串的位置或者NULL。
+ */
+const char* tk_strrstr(const char* str, const char* substr);
 
 /**
  * @method tk_str_append
@@ -561,6 +586,18 @@ ret_t tk_replace_locale(const char* name, char out[TK_NAME_LEN + 1], const char*
 bool_t tk_str_start_with(const char* str, const char* prefix);
 
 /**
+ * @method tk_str_end_with
+ *
+ * 检查字符串是否以指定的字符串appendix结尾。
+ *
+ * @param {const char*} str 要检查字符串。
+ * @param {const char*} appendix 被检查的字符串。
+ *
+ * @return {bool_t} 返回TRUE表示是；否则表示不是。
+ */
+bool_t tk_str_end_with(const char* str, const char* appendix);
+
+/**
  * @method tk_under_score_to_camel
  *
  * 将下划线名字转成驼峰名字。
@@ -604,6 +641,7 @@ void* tk_pointer_from_int(int32_t v);
  * @method tk_str_toupper
  *
  * 将小写字母转换为大写字母。
+ * >修改传入的字符串。
  *
  * @param {char*} str 要被转换成大写字母的字符串。
  *
@@ -612,9 +650,22 @@ void* tk_pointer_from_int(int32_t v);
 char* tk_str_toupper(char* str);
 
 /**
+ * @method tk_str_totitle
+ *
+ * 将单词首字母转换为大写字母。
+ * >修改传入的字符串。
+ *
+ * @param {char*} str 被转换的字符串。
+ *
+ * @return {char*} 返回转换后的字符串。
+ */
+char* tk_str_totitle(char* str);
+
+/**
  * @method tk_str_tolower
  *
  * 将大写字母转换为小写字母。
+ * >修改传入的字符串。
  *
  * @param {char*} str 要被转换成小写字母的字符串。
  *
@@ -663,12 +714,12 @@ ret_t image_region_parse(uint32_t img_w, uint32_t img_h, const char* region, rec
  * @method object_to_json
  * 将对象转换成json字符串。
  *
- * @param {object_t*} obj object对象。
+ * @param {tk_object_t*} obj object对象。
  * @param {str_t*} str 用于返回结果。
  *
  * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
  */
-ret_t object_to_json(object_t* obj, str_t* str);
+ret_t object_to_json(tk_object_t* obj, str_t* str);
 
 /**
  * @method data_url_copy
@@ -682,7 +733,49 @@ ret_t object_to_json(object_t* obj, str_t* str);
  */
 ret_t data_url_copy(const char* dst_url, const char* src_url);
 
+/**
+ * @method tk_qsort
+ * 
+ * 快速排序。
+ *
+ * @param {void**} array 数据。
+ * @param {size_t} nr 元素个数。
+ * @param {tk_compare_t} cmp 比较函数。
+ *
+ * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
+ */
+ret_t tk_qsort(void** array, size_t nr, tk_compare_t cmp);
+
+/**
+ * @method tk_str_is_in_array
+ * 
+ * 检查字符串是否在字符串数组中。
+ *
+ * @param {const char*} str 字符串。
+ * @param {const char**} str_array 字符串数组。
+ * @param {uint32_t} array_size 字符串数组中字符串的个数。
+ *
+ * @return {bool_t} 返回TRUE表示在，否则表示不在。
+ */
+bool_t tk_str_is_in_array(const char* str, const char** str_array, uint32_t array_size);
+
 const char* tk_normalize_key_name(const char* name, char fixed_name[TK_NAME_LEN + 1]);
+
+static inline int32_t tk_max_int(int32_t a, int32_t b) {
+  return tk_max(a, b);
+}
+
+static inline int32_t tk_min_int(int32_t a, int32_t b) {
+  return tk_min(a, b);
+}
+
+static inline float tk_max_float(float a, float b) {
+  return tk_max(a, b);
+}
+
+static inline float tk_min_float(float a, float b) {
+  return tk_min(a, b);
+}
 
 /*public for test*/
 ret_t xml_file_expand(const char* filename, str_t* s, const char* data);

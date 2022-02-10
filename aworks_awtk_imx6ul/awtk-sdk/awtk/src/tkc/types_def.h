@@ -38,14 +38,14 @@
 #if defined(HAS_AWTK_CONFIG)
 #include "awtk_config.h"
 #ifdef FRAGMENT_FRAME_BUFFER_SIZE
-#undef WITH_WINDOW_ANIMATORS
 #endif /*FRAGMENT_FRAME_BUFFER_SIZE*/
 #endif /*HAS_AWTK_CONFIG*/
 
 #if defined(WIN32) || defined(LINUX) || defined(MACOS) || defined(ANDROID) || defined(IOS)
-
 #define WITH_SOCKET 1
+#endif /*WIN32 || MACOS || LINUX || IOS || ANDROID*/
 
+#ifdef WITH_SOCKET
 #ifdef WIN32
 #define WIN32_LEAN_AND_MEAN 1
 #include <windows.h>
@@ -63,9 +63,7 @@ typedef int socklen_t;
 #include <sys/time.h>
 #include <sys/types.h>
 #endif /*WIN32*/
-
-#endif /*WIN32 || MACOS || LINUX || IOS || ANDROID*/
-
+#endif /*WITH_SOCKET*/
 #ifdef __cplusplus
 #define BEGIN_C_DECLS extern "C" {
 #define END_C_DECLS }
@@ -117,8 +115,12 @@ typedef float float_t;
 struct _value_t;
 typedef struct _value_t value_t;
 
-struct _object_t;
-typedef struct _object_t object_t;
+struct _tk_object_t;
+typedef struct _tk_object_t tk_object_t;
+
+#ifndef USE_TK_PREFIX
+#define object_t tk_object_t
+#endif /*USE_TK_PREFIX*/
 
 /**
  * @enum ret_t
@@ -249,7 +251,7 @@ typedef enum _ret_t {
 #define MAX_PATH 255
 #endif /*MAX_PATH*/
 
-#if defined(WIN32)
+#if defined(WIN32) && !defined(MINGW)
 #define TK_PATH_SEP '\\'
 #ifndef snprintf
 #define snprintf _snprintf
@@ -309,6 +311,11 @@ typedef enum _ret_t {
 
 #endif
 
+#define return_value_if_equal(p, value) \
+  if ((p) == value) {                   \
+    return (value);                     \
+  }
+
 #define tk_min(a, b) ((a) < (b) ? (a) : (b))
 #define tk_abs(a) ((a) < (0) ? (-(a)) : (a))
 #define tk_max(a, b) ((a) > (b) ? (a) : (b))
@@ -325,16 +332,19 @@ typedef ret_t (*tk_destroy_t)(void* data);
 typedef ret_t (*tk_on_done_t)(void* data);
 typedef ret_t (*tk_on_result_t)(void* ctx, const void* data);
 typedef bool_t (*tk_is_valid_t)(void* data);
+
+/*TRUE 保留，FALSE 忽略*/
 typedef bool_t (*tk_filter_t)(void* ctx, const void* data);
 typedef int (*tk_compare_t)(const void* a, const void* b);
 typedef ret_t (*tk_visit_t)(void* ctx, const void* data);
+typedef uint32_t (*tk_hash_t)(const void* data);
 typedef ret_t (*tk_callback_t)(void* ctx);
 
 /*TK_NAME_LEN+1 must aligned to 4*/
 enum { TK_NAME_LEN = 31, TK_FUNC_NAME_LEN = 63 };
 
 #ifdef WITH_CPPCHECK
-#define tk_str_eq strcmp
+#define tk_str_eq strcmp("abc", "123")
 #define tk_str_ieq strcasecmp
 #define tk_str_eq_with_len strncmp
 #else
@@ -351,15 +361,13 @@ enum { TK_NAME_LEN = 31, TK_FUNC_NAME_LEN = 63 };
 #define tk_lfequal(f1, f2) (fabs((f1) - (f2)) < 0.0001)
 #define tk_fequal(f1, f2) (fabs((f1) - (f2)) < 0.0000001)
 
-#define TK_ROUND_TO(size, round_size) ((((size) + round_size - 1) / round_size) * round_size)
-
 #ifndef M_PI
 #define M_PI 3.1415926f
 #endif /*M_PI*/
 
-#define TK_INVALID_ID 0
-#define TK_NUM_MAX_LEN 31
-#define TK_UINT32_MAX 0xffffffff
+#define TK_INVALID_ID 0u
+#define TK_NUM_MAX_LEN 31u
+#define TK_UINT32_MAX 0xffffffffu
 #define TK_LOCALE_MAGIC "$locale$"
 
 #define TK_D2R(d) (((d)*M_PI) / 180)
@@ -397,7 +405,10 @@ typedef struct _event_source_manager_t event_source_manager_t;
 #endif /*EAGAIN*/
 
 #define TK_SET_NULL(p) (p) = NULL
-#define TK_ROUND_TO8(size) (((size + 7) >> 3) << 3)
+#define TK_ROUND_TO4(size) ((((size) + 3) >> 2) << 2)
+#define TK_ROUND_TO8(size) ((((size) + 7) >> 3) << 3)
+#define TK_ROUND_TO_MACH(size) ((sizeof(void*) == 4) ? TK_ROUND_TO4(size) : TK_ROUND_TO8(size))
+#define TK_ROUND_TO(size, round_size) ((((size) + (round_size)-1) / (round_size)) * (round_size))
 
 #define TK_SET_BIT(v, n) ((v) |= 1UL << (n))
 #define TK_CLEAR_BIT(v, n) ((v) &= ~(1UL << (n)))
@@ -407,5 +418,18 @@ typedef struct _event_source_manager_t event_source_manager_t;
 #ifndef TK_DEFAULT_WAIT_TIME
 #define TK_DEFAULT_WAIT_TIME 16
 #endif /*TK_DEFAULT_WAIT_TIME*/
+
+/*from cairo/cairo/cairoint.h*/
+#if _XOPEN_SOURCE >= 600 || defined(_ISOC99_SOURCE)
+#define TK_ISFINITE(x) isfinite(x)
+#else
+#define TK_ISFINITE(x) ((x) * (x) >= 0.) /* check for NaNs */
+#endif
+
+#define tk_isspace(c) (((int)(c) < 128) && isspace(c))
+#define tk_isdigit(c) (((int)(c) < 128) && isdigit(c))
+#define tk_isxdigit(c) (((int)(c) < 128) && isxdigit(c))
+#define tk_isprint(c) (((int)(c) < 128) && isprint(c))
+#define tk_isalpha(c) (((int)(c) < 128) && isalpha(c))
 
 #endif /*TYPES_DEF_H*/

@@ -29,10 +29,16 @@
 #include "base/window.h"
 #include "tkc/tokenizer.h"
 #include "text_selector/text_selector.h"
+#include "base/widget_animator_manager.h"
 #include "widget_animators/widget_animator_scroll.h"
 
+#define TEXT_SELECTOR_WA_NAME "text_selector@wa"
+
+static const wchar_t* text_selector_get_wtext(widget_t* widget);
 static ret_t text_selector_set_all_options_localize_text(widget_t* widget);
-static ret_t text_selector_sync_yoffset_with_selected_index(text_selector_t* text_selector);
+static ret_t text_selector_scroll_to(widget_t* widget, int32_t yoffset_end);
+static ret_t text_selector_sync_yoffset_with_selected_index(text_selector_t* text_selector,
+                                                            bool_t is_anim);
 
 const char* s_text_selector_properties[] = {WIDGET_PROP_TEXT,
                                             WIDGET_PROP_VALUE,
@@ -42,6 +48,7 @@ const char* s_text_selector_properties[] = {WIDGET_PROP_TEXT,
                                             WIDGET_PROP_LOCALIZE_OPTIONS,
                                             TEXT_SELECTOR_PROP_Y_SPEED_SCALE,
                                             TEXT_SELECTOR_PROP_LOOP_OPTIONS,
+                                            TEXT_SELECTOR_PROP_ANIMATION_TIME,
                                             NULL};
 
 static ret_t text_selector_paint_mask(widget_t* widget, canvas_t* c) {
@@ -174,18 +181,20 @@ static ret_t text_selector_paint_self(widget_t* widget, canvas_t* c) {
   int32_t options_nr, empty_item_height, min_yoffset;
   text_selector_t* text_selector = TEXT_SELECTOR(widget);
   return_value_if_fail(text_selector != NULL, RET_BAD_PARAMS);
+  options_nr = text_selector_count_options(widget);
+  if (options_nr == 0) {
+    return RET_OK;
+  }
 
   yoffset = text_selector->yoffset;
   visible_nr = text_selector->visible_nr;
   item_height = text_selector->draw_widget_h / visible_nr;
   r = rect_init(0, 0, widget->w, item_height);
 
-  options_nr = text_selector_count_options(widget);
   empty_item_height = (text_selector->visible_nr / 2) * item_height;
   min_yoffset = -empty_item_height;
   max_yoffset = (options_nr * item_height + empty_item_height) - text_selector->draw_widget_h;
   tolal_height = max_yoffset + empty_item_height;
-  return_value_if_fail(options_nr > 0, RET_BAD_PARAMS);
 
   widget_prepare_text_style(widget, c);
   iter = text_selector->option_items;
@@ -264,7 +273,7 @@ static ret_t text_selector_on_layout_children(widget_t* widget) {
   return_value_if_fail(text_selector != NULL, RET_BAD_PARAMS);
   text_selector_set_real_draw_info(widget);
   if (!text_selector->is_init) {
-    text_selector_sync_yoffset_with_selected_index(text_selector);
+    text_selector_sync_yoffset_with_selected_index(text_selector, FALSE);
     text_selector->is_init = TRUE;
   }
   return RET_OK;
@@ -371,7 +380,7 @@ static ret_t text_selector_get_prop(widget_t* widget, const char* name, value_t*
   return_value_if_fail(widget != NULL && text_selector != NULL, RET_BAD_PARAMS);
 
   if (tk_str_eq(name, WIDGET_PROP_TEXT)) {
-    value_set_str(v, text_selector_get_text(widget));
+    value_set_wstr(v, text_selector_get_wtext(widget));
     return RET_OK;
   } else if (tk_str_eq(name, WIDGET_PROP_VALUE)) {
     value_set_int(v, text_selector_get_value(widget));
@@ -399,6 +408,12 @@ static ret_t text_selector_get_prop(widget_t* widget, const char* name, value_t*
     return RET_OK;
   } else if (tk_str_eq(name, TEXT_SELECTOR_PROP_LOOP_OPTIONS)) {
     value_set_bool(v, text_selector->loop_options);
+    return RET_OK;
+  } else if (tk_str_eq(name, TEXT_SELECTOR_PROP_ANIMATION_TIME)) {
+    value_set_uint32(v, text_selector->animating_time);
+    return RET_OK;
+  } else if (tk_str_eq(name, TEXT_SELECTOR_PROP_ENABLE_VALUE_ANIMATOR)) {
+    value_set_bool(v, text_selector->enable_value_animator);
     return RET_OK;
   }
 
@@ -435,6 +450,10 @@ static ret_t text_selector_set_prop(widget_t* widget, const char* name, const va
     return text_selector_set_yspeed_scale(widget, value_float(v));
   } else if (tk_str_eq(name, TEXT_SELECTOR_PROP_LOOP_OPTIONS)) {
     return text_selector_set_loop_options(widget, value_bool(v));
+  } else if (tk_str_eq(name, TEXT_SELECTOR_PROP_ANIMATION_TIME)) {
+    return text_selector_set_animating_time(widget, value_uint32(v));
+  } else if (tk_str_eq(name, TEXT_SELECTOR_PROP_ENABLE_VALUE_ANIMATOR)) {
+    return text_selector_set_enable_value_animator(widget, value_bool(v));
   }
 
   return RET_NOT_FOUND;
@@ -475,6 +494,7 @@ static ret_t text_selector_set_selected_index_only(text_selector_t* text_selecto
     value_set_uint32(&(evt.new_value), index);
 
     if (widget_dispatch(widget, (event_t*)&evt) != RET_STOP) {
+      text_selector->last_selected_index = text_selector->selected_index;
       text_selector->selected_index = index;
       if (widget->tr_text != NULL) {
         widget->tr_text = tk_str_copy(widget->tr_text, option->tr_text);
@@ -501,16 +521,53 @@ static ret_t text_selector_sync_selected_index_with_yoffset(text_selector_t* tex
   return text_selector_set_selected_index_only(text_selector, selected_index);
 }
 
-static ret_t text_selector_sync_yoffset_with_selected_index(text_selector_t* text_selector) {
+static int32_t text_selector_get_yoffset_for_selected_index(text_selector_t* text_selector,
+                                                            int32_t mid_index,
+                                                            int32_t item_height) {
+  int32_t yoffset = 0;
+  if (text_selector->loop_options) {
+    int32_t options_nr = text_selector_count_options(WIDGET(text_selector));
+    int32_t n = options_nr >> 1;
+    int32_t d =
+        n - tk_abs(tk_abs(text_selector->selected_index - text_selector->last_selected_index) - n);
+    yoffset = text_selector->yoffset;
+    if (text_selector->selected_index > text_selector->last_selected_index) {
+      if (text_selector->selected_index - d == text_selector->last_selected_index) {
+        yoffset += (d * item_height);
+      } else {
+        yoffset -= (d * item_height);
+      }
+    } else {
+      if ((text_selector->last_selected_index + d + 1) % options_nr ==
+          text_selector->selected_index) {
+        yoffset += ((d + 1) * item_height);
+      } else {
+        yoffset -= (d * item_height);
+      }
+    }
+  } else {
+    yoffset = (text_selector->selected_index - mid_index) * item_height;
+  }
+  return yoffset;
+}
+
+static ret_t text_selector_sync_yoffset_with_selected_index(text_selector_t* text_selector,
+                                                            bool_t is_anim) {
   widget_t* widget = WIDGET(text_selector);
   int32_t mid_index = text_selector->visible_nr / 2;
   int32_t item_height = text_selector->draw_widget_h / text_selector->visible_nr;
-
-  text_selector->yoffset = (text_selector->selected_index - mid_index) * item_height;
-
-  widget_invalidate(widget, NULL);
-
-  return RET_OK;
+  if (is_anim && !widget->loading) {
+    int32_t yoffset =
+        text_selector_get_yoffset_for_selected_index(text_selector, mid_index, item_height);
+    if (text_selector->wa != NULL) {
+      widget_animator_destroy(text_selector->wa);
+      text_selector->wa = NULL;
+    }
+    return text_selector_scroll_to(widget, yoffset);
+  } else {
+    text_selector->yoffset = (text_selector->selected_index - mid_index) * item_height;
+    return widget_invalidate(widget, NULL);
+  }
 }
 
 static ret_t text_selector_on_scroll_done(void* ctx, event_t* e) {
@@ -573,13 +630,19 @@ static ret_t text_selector_scroll_to(widget_t* widget, int32_t yoffset_end) {
     return RET_OK;
   }
 
-  text_selector->wa = widget_animator_scroll_create(widget, TK_ANIMATING_TIME, 0, EASING_SIN_INOUT);
+#ifndef WITHOUT_WIDGET_ANIMATORS
+  text_selector->wa =
+      widget_animator_scroll_create(widget, text_selector->animating_time, 0, EASING_SIN_INOUT);
   return_value_if_fail(text_selector->wa != NULL, RET_OOM);
 
+  widget_animator_set_name(text_selector->wa, TEXT_SELECTOR_WA_NAME);
   widget_animator_scroll_set_params(text_selector->wa, 0, yoffset, 0, yoffset_end);
   widget_animator_on(text_selector->wa, EVT_ANIM_END, text_selector_on_scroll_done, text_selector);
   widget_animator_start(text_selector->wa);
-
+#else
+  text_selector->yoffset = yoffset_end;
+  text_selector_on_scroll_done(widget, NULL);
+#endif /*WITHOUT_WIDGET_ANIMATORS*/
   return RET_OK;
 }
 
@@ -616,7 +679,7 @@ static ret_t text_selector_up(widget_t* widget) {
   int32_t yoffset = 0;
   text_selector_t* text_selector = TEXT_SELECTOR(widget);
   return_value_if_fail(text_selector != NULL, RET_BAD_PARAMS);
-  yoffset = text_selector->yoffset - (widget->h / text_selector->visible_nr);
+  yoffset = text_selector->yoffset - (text_selector->draw_widget_h / text_selector->visible_nr);
 
   return text_selector_scroll_to(widget, yoffset);
 }
@@ -625,7 +688,7 @@ static ret_t text_selector_down(widget_t* widget) {
   int32_t yoffset = 0;
   text_selector_t* text_selector = TEXT_SELECTOR(widget);
   return_value_if_fail(text_selector != NULL, RET_BAD_PARAMS);
-  yoffset = text_selector->yoffset + (widget->h / text_selector->visible_nr);
+  yoffset = text_selector->yoffset + (text_selector->draw_widget_h / text_selector->visible_nr);
 
   return text_selector_scroll_to(widget, yoffset);
 }
@@ -684,7 +747,7 @@ static ret_t text_selector_on_event(widget_t* widget, event_t* e) {
     }
     case EVT_RESIZE:
     case EVT_MOVE_RESIZE: {
-      text_selector_sync_yoffset_with_selected_index(text_selector);
+      text_selector_sync_yoffset_with_selected_index(text_selector, FALSE);
       break;
     }
     default:
@@ -729,7 +792,9 @@ widget_t* text_selector_create(widget_t* parent, xy_t x, xy_t y, wh_t w, wh_t h)
   text_selector->is_init = FALSE;
   text_selector->yspeed_scale = 1.0f;
 
+  text_selector->enable_value_animator = TRUE;
   text_selector->locale_info_id = TK_INVALID_ID;
+  text_selector->animating_time = TK_ANIMATING_TIME;
 
   return widget;
 }
@@ -739,6 +804,15 @@ ret_t text_selector_reset_options(widget_t* widget) {
   text_selector_option_t* next = NULL;
   text_selector_t* text_selector = TEXT_SELECTOR(widget);
   return_value_if_fail(text_selector != NULL, RET_BAD_PARAMS);
+
+  if (text_selector->wa != NULL) {
+    widget_animator_t* ani =
+        widget_animator_manager_find(widget_animator_manager(), widget, TEXT_SELECTOR_WA_NAME);
+    if (ani != NULL && text_selector->wa == ani) {
+      widget_animator_destroy(text_selector->wa);
+    }
+    text_selector->wa = NULL;
+  }
 
   iter = text_selector->option_items;
   while (iter != NULL) {
@@ -750,6 +824,7 @@ ret_t text_selector_reset_options(widget_t* widget) {
   }
   text_selector->option_items = NULL;
   TKMEM_FREE(text_selector->options);
+  widget_invalidate(widget, NULL);
 
   return RET_OK;
 }
@@ -897,8 +972,11 @@ ret_t text_selector_set_selected_index(widget_t* widget, uint32_t index) {
   return_value_if_fail(text_selector != NULL, RET_BAD_PARAMS);
   return_value_if_fail(option != NULL, RET_BAD_PARAMS);
 
-  text_selector_set_selected_index_only(text_selector, index);
-  text_selector_sync_yoffset_with_selected_index(text_selector);
+  if (index != text_selector->selected_index) {
+    text_selector_set_selected_index_only(text_selector, index);
+    text_selector_sync_yoffset_with_selected_index(text_selector,
+                                                   text_selector->enable_value_animator);
+  }
 
   return widget_invalidate(widget, NULL);
 }
@@ -912,7 +990,7 @@ ret_t text_selector_set_visible_nr(widget_t* widget, uint32_t visible_nr) {
   } else {
     text_selector->visible_nr = 1;
   }
-  text_selector_sync_yoffset_with_selected_index(text_selector);
+  text_selector_sync_yoffset_with_selected_index(text_selector, FALSE);
 
   return widget_invalidate(widget, NULL);
 }
@@ -935,20 +1013,23 @@ ret_t text_selector_set_value(widget_t* widget, int32_t value) {
   return text_selector_set_selected_index(widget, index);
 }
 
-const char* text_selector_get_text(widget_t* widget) {
+static const wchar_t* text_selector_get_wtext(widget_t* widget) {
   text_selector_option_t* option = NULL;
   text_selector_t* text_selector = TEXT_SELECTOR(widget);
   return_value_if_fail(text_selector != NULL, NULL);
 
   option = text_selector_get_option(widget, text_selector->selected_index);
 
-  if (option != NULL) {
-    str_from_wstr(&(text_selector->text), option->text.str);
+  return option != NULL ? option->text.str : NULL;
+}
 
-    return text_selector->text.str;
-  }
+const char* text_selector_get_text(widget_t* widget) {
+  text_selector_t* text_selector = TEXT_SELECTOR(widget);
+  return_value_if_fail(text_selector != NULL, NULL);
 
-  return NULL;
+  str_from_wstr(&(text_selector->text), text_selector_get_wtext(widget));
+
+  return text_selector->text.str;
 }
 
 ret_t text_selector_set_text(widget_t* widget, const char* text) {
@@ -991,6 +1072,24 @@ ret_t text_selector_set_yspeed_scale(widget_t* widget, float_t yspeed_scale) {
   return_value_if_fail(text_selector != NULL, RET_BAD_PARAMS);
 
   text_selector->yspeed_scale = yspeed_scale;
+
+  return RET_OK;
+}
+
+ret_t text_selector_set_animating_time(widget_t* widget, uint32_t animating_time) {
+  text_selector_t* text_selector = TEXT_SELECTOR(widget);
+  return_value_if_fail(text_selector != NULL, RET_BAD_PARAMS);
+
+  text_selector->animating_time = animating_time;
+
+  return RET_OK;
+}
+
+ret_t text_selector_set_enable_value_animator(widget_t* widget, bool_t enable_value_animator) {
+  text_selector_t* text_selector = TEXT_SELECTOR(widget);
+  return_value_if_fail(text_selector != NULL, RET_BAD_PARAMS);
+
+  text_selector->enable_value_animator = enable_value_animator;
 
   return RET_OK;
 }

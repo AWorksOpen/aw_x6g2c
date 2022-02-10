@@ -1,5 +1,6 @@
 ﻿#include "tkc/fs.h"
 #include "tkc/mem.h"
+#include "tkc/utils.h"
 #include "gtest/gtest.h"
 
 TEST(Fs, basic) {
@@ -14,9 +15,9 @@ TEST(Fs, read_part) {
 
   file_write(filename, str, strlen(str));
   char* ret = (char*)file_read(filename, &size);
-  ASSERT_EQ(file_read_part(filename, buff, sizeof(buff), 0), strlen(str));
+  ASSERT_EQ(file_read_part(filename, buff, sizeof(buff), 0), (int32_t)strlen(str));
   ASSERT_EQ(strcmp(ret, str), 0);
-  ASSERT_EQ(size, strlen(str));
+  ASSERT_EQ(size, (uint32_t)strlen(str));
   file_remove(filename);
   TKMEM_FREE(ret);
 }
@@ -154,3 +155,77 @@ TEST(Fs, create_dir_r) {
   ASSERT_EQ(fs_remove_dir_r(os_fs(), "a"), RET_OK);
   ASSERT_EQ(fs_dir_exist(os_fs(), "a"), FALSE);
 }
+
+TEST(Fs, copy_file) {
+  const char* src = "./test.txt";
+  const char* dst = "./a/b/test.txt";
+
+  ASSERT_EQ(file_write(src, "hello", 5), RET_OK);
+  ASSERT_EQ(file_exist(src), TRUE);
+  ASSERT_EQ(file_exist(dst), FALSE);
+
+  ASSERT_EQ(fs_copy_file(os_fs(), src, dst), RET_OK);
+  ASSERT_EQ(fs_remove_dir_r(os_fs(), "a"), RET_OK);
+
+  dst = "test1.txt";
+  ASSERT_EQ(fs_copy_file(os_fs(), src, dst), RET_OK);
+  ASSERT_EQ(file_remove(src), RET_OK);
+  ASSERT_EQ(file_remove(dst), RET_OK);
+  ;
+
+  ASSERT_EQ(file_exist(src), FALSE);
+  ASSERT_EQ(file_exist(dst), FALSE);
+}
+
+TEST(Fs, copy_dir) {
+  const char* src = "./a";
+  const char* dst = "./b";
+
+  ASSERT_EQ(fs_create_dir_r(os_fs(), "./a/a1"), RET_OK);
+  ASSERT_EQ(fs_create_dir_r(os_fs(), "./a/a2"), RET_OK);
+  ASSERT_EQ(fs_create_dir_r(os_fs(), "./a/a3/a4"), RET_OK);
+  ASSERT_EQ(file_write("./a/a3/a4/test.txt", "hello", 5), RET_OK);
+
+  ASSERT_EQ(fs_copy_dir(os_fs(), src, dst), RET_OK);
+  ASSERT_EQ(dir_exist("./b"), TRUE);
+  ASSERT_EQ(dir_exist("./b/a1"), TRUE);
+  ASSERT_EQ(dir_exist("./b/a2"), TRUE);
+  ASSERT_EQ(dir_exist("./b/a3"), TRUE);
+  ASSERT_EQ(file_exist("./b/a3/a4/test.txt"), TRUE);
+
+  ASSERT_EQ(fs_remove_dir_r(os_fs(), "a"), RET_OK);
+  ASSERT_EQ(fs_remove_dir_r(os_fs(), "b"), RET_OK);
+}
+
+static ret_t on_file(void* ctx, const void* data) {
+  const char* filename = (const char*)data;
+  const char* extname = (const char*)ctx;
+
+  if (tk_str_end_with(filename, extname)) {
+    log_debug("%s\n", filename);
+  }
+  return RET_OK;
+}
+
+TEST(Fs, foreach_file) {
+  fs_foreach_file("tests/testdata", on_file, (void*)".json");
+}
+
+#ifdef WIN32
+TEST(Fs, stat) {
+  fs_stat_info_t st;
+  ASSERT_EQ(fs_stat(os_fs(), "c:", &st), RET_OK);
+  ASSERT_EQ(fs_stat(os_fs(), "c:\\", &st), RET_OK);
+  ASSERT_EQ(fs_stat(os_fs(), "c://", &st), RET_OK);
+
+  ASSERT_EQ(fs_create_dir_r(os_fs(), "c:\\awtk_test\\test"), RET_OK);
+  ASSERT_EQ(dir_exist("c:\\awtk_test\\test"), TRUE);
+  ASSERT_EQ(fs_remove_dir_r(os_fs(), "c:\\awtk_test"), RET_OK);
+  ASSERT_EQ(dir_exist("c:\\awtk_test"), FALSE);
+
+  ASSERT_EQ(fs_create_dir_r(os_fs(), "c://awtk_test//test"), RET_OK);
+  ASSERT_EQ(dir_exist("c:/awtk_test/test"), TRUE);
+  ASSERT_EQ(fs_remove_dir_r(os_fs(), "c:/awtk_test"), RET_OK);
+  ASSERT_EQ(dir_exist("c:/awtk_test"), FALSE);
+}
+#endif /*WIN32*/

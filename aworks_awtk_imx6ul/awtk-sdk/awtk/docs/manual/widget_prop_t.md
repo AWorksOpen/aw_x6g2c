@@ -11,6 +11,7 @@
 | WIDGET\_PROP\_Y | Y坐标。 |
 | WIDGET\_PROP\_W | 宽度。 |
 | WIDGET\_PROP\_H | 高度。 |
+| WIDGET\_PROP\_MAX\_H | 最大高度。 |
 | WIDGET\_PROP\_DESIGN\_W | 窗口设计时宽度。 |
 | WIDGET\_PROP\_DESIGN\_H | 窗口设计时宽度。 |
 | WIDGET\_PROP\_AUTO\_SCALE\_CHILDREN\_X | 窗口大小与设计时大小不同时，是否自动调整子控件的x坐标。 |
@@ -33,6 +34,7 @@
 | WIDGET\_PROP\_MAX\_W | 最大宽度。 |
 | WIDGET\_PROP\_AUTO\_ADJUST\_SIZE | 根据子控件和文本自动调整大小。 |
 | WIDGET\_PROP\_SINGLE\_INSTANCE | 窗口是否保持单例。 |
+| WIDGET\_PROP\_STRONGLY\_FOCUS | 点击非focusable控件时，是否让当前焦点控件失去焦点。比如点击窗口空白区域，是否让编辑器失去焦点。 |
 | WIDGET\_PROP\_CHILDREN\_LAYOUT | 子控件布局参数。 |
 | WIDGET\_PROP\_LAYOUT | 子控件布局参数(过时)。 |
 | WIDGET\_PROP\_SELF\_LAYOUT | 控件布局参数。 |
@@ -45,6 +47,7 @@
 | WIDGET\_PROP\_CLOSABLE | 是否可以关闭。 |
 | WIDGET\_PROP\_POINTER\_CURSOR | 鼠标指针。 |
 | WIDGET\_PROP\_VALUE | 值。 |
+| WIDGET\_PROP\_RADIO | CheckButton是否单选。 |
 | WIDGET\_PROP\_REVERSE | 进度条反向显示。 |
 | WIDGET\_PROP\_LENGTH | 长度。 |
 | WIDGET\_PROP\_LINE\_WRAP | 自动换行。 |
@@ -103,14 +106,14 @@
 | WIDGET\_PROP\_GRAB\_KEYS | 让窗口管理器直接把按键发给自己。 |
 | WIDGET\_PROP\_ROW | 行数或每行的高度。 |
 | WIDGET\_PROP\_STATE\_FOR\_STYLE | 控件状态。 |
-| WIDGET\_PROP\_THEME | 窗口主题名称。 |
+| WIDGET\_PROP\_THEME | 窗体样式名称。 |
 | WIDGET\_PROP\_STAGE | window stage |
 | WIDGET\_PROP\_IMAGE\_MANAGER | 图片管理器。 |
 | WIDGET\_PROP\_ASSETS\_MANAGER | 资源管理器。 |
 | WIDGET\_PROP\_LOCALE\_INFO | locale\_info。 |
 | WIDGET\_PROP\_FONT\_MANAGER | 字体管理器。 |
-| WIDGET\_PROP\_THEME\_OBJ | 窗口的主题对象。 |
-| WIDGET\_PROP\_DEFAULT\_THEME\_OBJ | 缺省的主题对象。 |
+| WIDGET\_PROP\_THEME\_OBJ | 窗口的窗体样式对象。 |
+| WIDGET\_PROP\_DEFAULT\_THEME\_OBJ | 缺省的窗体样式对象。 |
 | WIDGET\_PROP\_ITEM\_WIDTH | 项的宽度。 |
 | WIDGET\_PROP\_ITEM\_HEIGHT | 项的高度。 |
 | WIDGET\_PROP\_DEFAULT\_ITEM\_HEIGHT | 项的缺省高度。 |
@@ -121,6 +124,7 @@
 | WIDGET\_PROP\_ENABLE\_LONG\_PRESS | 是否启用长按。 |
 | WIDGET\_PROP\_CLICK\_THROUGH | 是否启用点击穿透。 |
 | WIDGET\_PROP\_ANIMATABLE | 是否启用动画。 |
+| WIDGET\_PROP\_AUTO\_HIDE | 是否自动隐藏。 |
 | WIDGET\_PROP\_AUTO\_HIDE\_SCROLL\_BAR | 是否自动隐藏滚动条。 |
 | WIDGET\_PROP\_IMAGE | 图片名称。 |
 | WIDGET\_PROP\_FORMAT | 显示格式。 |

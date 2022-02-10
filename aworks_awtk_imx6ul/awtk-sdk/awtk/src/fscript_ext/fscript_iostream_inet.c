@@ -29,10 +29,10 @@ static ret_t func_iostream_tcp_create(fscript_t* fscript, fscript_args_t* args, 
   host = value_str(args->args);
   port = value_int(args->args + 1);
   return_value_if_fail(host != NULL && port > 0, RET_BAD_PARAMS);
-  sock = tcp_connect(host, port);
+  sock = tk_tcp_connect(host, port);
   return_value_if_fail(sock >= 0, RET_BAD_PARAMS);
 
-  value_set_object(result, OBJECT(tk_iostream_tcp_create(sock)));
+  value_set_object(result, TK_OBJECT(tk_iostream_tcp_create(sock)));
   result->free_handle = TRUE;
 
   return RET_OK;
@@ -47,14 +47,17 @@ static ret_t func_iostream_udp_create(fscript_t* fscript, fscript_args_t* args, 
   port = value_int(args->args + 1);
   return_value_if_fail(host != NULL && port > 0, RET_BAD_PARAMS);
 
-  value_set_object(result, OBJECT(tk_iostream_udp_create_client(host, port)));
+  value_set_object(result, TK_OBJECT(tk_iostream_udp_create_client(host, port)));
   result->free_handle = TRUE;
 
   return RET_OK;
 }
 
+FACTORY_TABLE_BEGIN(s_ext_iostream_inet)
+FACTORY_TABLE_ENTRY("iostream_tcp_create", func_iostream_tcp_create)
+FACTORY_TABLE_ENTRY("iostream_udp_create", func_iostream_udp_create)
+FACTORY_TABLE_END()
+
 ret_t fscript_iostream_inet_register(void) {
-  ENSURE(fscript_register_func("iostream_tcp_create", func_iostream_tcp_create) == RET_OK);
-  ENSURE(fscript_register_func("iostream_udp_create", func_iostream_udp_create) == RET_OK);
-  return RET_OK;
+  return fscript_register_funcs(s_ext_iostream_inet);
 }

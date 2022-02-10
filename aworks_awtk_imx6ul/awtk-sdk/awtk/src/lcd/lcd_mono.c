@@ -49,8 +49,14 @@ static color_t lcd_mono_get_point_color(lcd_t* lcd, xy_t x, xy_t y) {
   return c;
 }
 
-static ret_t lcd_mono_begin_frame(lcd_t* lcd, const rect_t* dirty_rect) {
-  lcd->dirty_rect = *dirty_rect;
+static ret_t lcd_mono_begin_frame(lcd_t* lcd, const dirty_rects_t* dirty_rects) {
+  const rect_t* dirty_rect = dirty_rects != NULL ? &(dirty_rects->max) : NULL;
+
+  if (dirty_rect != NULL) {
+    lcd->dirty_rect = *dirty_rect;
+  } else {
+    lcd->dirty_rect = rect_init(0, 0, lcd->w, lcd->h);
+  }
 
   return RET_OK;
 }
@@ -131,20 +137,23 @@ static ret_t lcd_mono_draw_glyph(lcd_t* lcd, glyph_t* glyph, const rect_t* src, 
   return lcd_mono_draw_data(lcd, glyph->data, glyph->w, glyph->h, src, x, y, !pixel);
 }
 
-static ret_t lcd_mono_draw_image_mono(lcd_t* lcd, bitmap_t* img, const rect_t* src,
-                                      const rect_t* dst) {
+static ret_t lcd_mono_draw_image_mono(lcd_t* lcd, bitmap_t* img, const rectf_t* src,
+                                      const rectf_t* dst) {
   ret_t ret = RET_OK;
   const uint8_t* data = NULL;
+  rect_t tmp_src = rect_from_rectf(src);
   return_value_if_fail(src->w == dst->w && src->h == dst->h, RET_OK);
 
   data = bitmap_lock_buffer_for_read(img);
-  ret = lcd_mono_draw_data(lcd, data, img->w, img->h, src, dst->x, dst->y, FALSE);
+  ret = lcd_mono_draw_data(lcd, data, img->w, img->h, (const rect_t*)(&tmp_src), (xy_t)(dst->x),
+                           (xy_t)(dst->y), FALSE);
   bitmap_unlock_buffer(img);
 
   return ret;
 }
 
-static ret_t lcd_mono_draw_image(lcd_t* lcd, bitmap_t* img, const rect_t* src, const rect_t* dst) {
+static ret_t lcd_mono_draw_image(lcd_t* lcd, bitmap_t* img, const rectf_t* src,
+                                 const rectf_t* dst) {
   return_value_if_fail(img->format == BITMAP_FMT_MONO, RET_NOT_IMPL);
   return_value_if_fail(src->w == dst->w && src->h == dst->h, RET_NOT_IMPL);
 
@@ -166,6 +175,15 @@ static ret_t lcd_mono_resize(lcd_t* lcd, wh_t w, wh_t h, uint32_t line_length) {
 
   return lcd_sdl2_mono_reinit(lcd, w, h, line_length);
 }
+
+static ret_t lcd_mono_set_orientation(lcd_t* lcd, lcd_orientation_t old_orientation,
+                                      lcd_orientation_t new_orientation) {
+  if (tk_is_swap_size_by_orientation(old_orientation, new_orientation)) {
+    return lcd_mono_resize(lcd, lcd->h, lcd->w, 0);
+  }
+  return RET_OK;
+}
+
 #endif
 
 static ret_t lcd_mono_destroy(lcd_t* lcd) {
@@ -202,6 +220,7 @@ lcd_t* lcd_mono_create(wh_t w, wh_t h, lcd_flush_t flush, lcd_destroy_t on_destr
 
 #ifdef WITH_LCD_MONO
   lcd->resize = lcd_mono_resize;
+  lcd->set_orientation = lcd_mono_set_orientation;
 #endif
   lcd->begin_frame = lcd_mono_begin_frame;
   lcd->draw_vline = lcd_mono_draw_vline;

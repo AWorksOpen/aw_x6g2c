@@ -468,6 +468,32 @@ bool_t fs_file_exist(fs_t* fs, const char* name);
 ret_t fs_file_rename(fs_t* fs, const char* name, const char* new_name);
 
 /**
+ * @method fs_copy_file
+ *
+ * 拷贝文件。
+ *
+ * @param {fs_t*} fs 文件系统对象，一般赋值为os_fs()。
+ * @param {const char*} src 源文件名。
+ * @param {const char*} dst 目标文件名。
+ *
+ * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
+ */
+ret_t fs_copy_file(fs_t* fs, const char* src, const char* dst);
+
+/**
+ * @method fs_copy_dir
+ *
+ * 拷贝目录。
+ *
+ * @param {fs_t*} fs 文件系统对象，一般赋值为os_fs()。
+ * @param {const char*} src 源目录。
+ * @param {const char*} dst 目标目录。
+ *
+ * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
+ */
+ret_t fs_copy_dir(fs_t* fs, const char* src, const char* dst);
+
+/**
  * @method fs_open_dir
  *
  * 打开目录。
@@ -676,6 +702,33 @@ fs_t* os_fs(void);
 /*wrapper*/
 
 /**
+ * @method fs_foreach_file
+ *
+ * 遍历指定目录下全部常规文件。
+ * 示例:
+ * ```c
+ * static ret_t on_file(void* ctx, const void* data) {
+ *  const char* filename = (const char*)data;
+ *  const char* extname = (const char*)ctx;
+ *
+ *  if (tk_str_end_with(filename, extname)) {
+ *    log_debug("%s\n", filename);
+ *  }
+ *  return RET_OK;
+ * }
+ * ...  
+ * fs_foreach_file("tests/testdata", on_file, (void*)".json");
+ *```
+ *
+ * @param {const char*} path 目录。
+ * @param {tk_visit_t} on_file 回调函数(完整文件名通过data参数传入)。
+ * @param {void*} ctx 回调函数上下文。
+ *
+ * @return {bool_t} 返回TRUE表示成功，否则表示失败。
+ */
+ret_t fs_foreach_file(const char* path, tk_visit_t on_file, void* ctx);
+
+/**
  * @method file_exist
  *
  * 判断文件是否存在。
@@ -685,6 +738,17 @@ fs_t* os_fs(void);
  * @return {bool_t} 返回TRUE表示成功，否则表示失败。
  */
 bool_t file_exist(const char* name);
+
+/**
+ * @method dir_exist
+ *
+ * 判断目录是否存在。
+ *
+ * @param {const char*} name 目录名。
+ *
+ * @return {bool_t} 返回TRUE表示成功，否则表示失败。
+ */
+bool_t dir_exist(const char* name);
 
 /**
  * @method file_remove

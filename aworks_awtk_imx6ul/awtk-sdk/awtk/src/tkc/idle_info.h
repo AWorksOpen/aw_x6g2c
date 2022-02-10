@@ -41,13 +41,13 @@ typedef enum _idle_info_type_t {
 
 /**
  * @class idle_info_t
- * @parent object_t
+ * @parent tk_object_t
  * @annotation ["scriptable"]
  *
  * 单个idle的信息。
  */
 struct _idle_info_t {
-  object_t object;
+  tk_object_t object;
 
   /**
    * @property {idle_func_t} on_idle
@@ -62,6 +62,13 @@ struct _idle_info_t {
    * idle回调函数上下文。
    */
   void* ctx;
+
+  /**
+   * @property {void*} extra_ctx
+   * @annotation ["readable", "scriptable"]
+   * idle回调函数上下文。
+   */
+  void* extra_ctx;
 
   /**
    * @property {uint32_t} id

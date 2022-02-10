@@ -32,7 +32,7 @@
 
 | 属性名称 | 类型 | 说明 | 
 | -------- | ----- | ------------ | 
-| <a href="#emitter_t_enable">enable</a> | bool\_t | 禁用标志。禁用时dispatch无效。 |
+| <a href="#emitter_t_disable">disable</a> | int32\_t | 禁用标志。禁用时dispatch无效。 |
 #### emitter\_cast 函数
 -----------------------
 
@@ -164,7 +164,7 @@ ret_t emitter_dispatch (emitter_t* emitter, event_t* e);
 * 函数原型：
 
 ```
-ret_t emitter_dispatch_simple_event (emitter_t* emitter, event_type_t type);
+ret_t emitter_dispatch_simple_event (emitter_t* emitter, uint32_t type);
 ```
 
 * 参数说明：
@@ -173,7 +173,7 @@ ret_t emitter_dispatch_simple_event (emitter_t* emitter, event_type_t type);
 | -------- | ----- | --------- |
 | 返回值 | ret\_t |  |
 | emitter | emitter\_t* | emitter对象。 |
-| type | event\_type\_t | 事件类型。 |
+| type | uint32\_t | 事件类型。 |
 #### emitter\_enable 函数
 -----------------------
 
@@ -442,11 +442,11 @@ uint32_t emitter_size (emitter_t* emitter);
 | -------- | ----- | --------- |
 | 返回值 | uint32\_t | 回调函数个数。 |
 | emitter | emitter\_t* | emitter对象。 |
-#### enable 属性
+#### disable 属性
 -----------------------
-> <p id="emitter_t_enable">禁用标志。禁用时dispatch无效。
+> <p id="emitter_t_disable">禁用标志。禁用时dispatch无效。
 
-* 类型：bool\_t
+* 类型：int32\_t
 
 | 特性 | 是否支持 |
 | -------- | ----- |
