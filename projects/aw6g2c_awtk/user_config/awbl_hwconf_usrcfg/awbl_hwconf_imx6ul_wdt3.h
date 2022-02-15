@@ -18,8 +18,19 @@
 
 #include "driver/wdt/awbl_imx6ul_wdt.h"
 
+#define SRC_SCR_ADDR    0x020D8000
+
 aw_local void __imx6ul_wdt3_plfm_init (void)
 {
+    uint32_t tmp = 0;
+
+    // add, solve reset problem
+    tmp = readl(SRC_SCR_ADDR);
+    tmp &= ~((0xf << 28) | (0x1));     // code reset and not mask wdog3 reset, global 
+    // todo barrier
+    tmp |= ((0xA << 28) | (0x1 << 24));
+    writel(tmp, SRC_SCR_ADDR);
+
     /* enable clock */
     aw_clk_enable(IMX6UL_CLK_WDOG3);
 };

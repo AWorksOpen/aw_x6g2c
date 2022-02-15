@@ -1,5 +1,9 @@
 版本记录
 ========
+.. describe:: 2.0.2 <2022-02-14>
+    
+    * fixed an external hardware watchdog issue.
+    
 .. describe:: 2.0.1 <2022-02-09>
     
     * awtk:update aworks_awtk_imx6ul to 1.0.1

@@ -32,7 +32,7 @@ extern "C" {
  * \brief SDK版本信息
  *        自动从CHANGELOG中抓取
  */
-#define IMX6UL_SDK_VERSION "2.0.1 <2022-02-09>"
+#define IMX6UL_SDK_VERSION "2.0.2 <2022-02-14>"
 
 #ifdef __cplusplus
 }

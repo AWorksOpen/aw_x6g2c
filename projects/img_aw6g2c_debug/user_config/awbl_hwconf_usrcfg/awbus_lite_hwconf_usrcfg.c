@@ -100,7 +100,6 @@
 
 #include "awbl_hwconf_gpio_wdt.h"
 #include "awbl_hwconf_imx6ul_wdt1.h"
-#include "awbl_hwconf_imx6ul_wdt2.h"
 #include "awbl_hwconf_imx6ul_wdt3.h"
 
 #include "awbl_hwconf_imx6ul_gpmi.h"
@@ -250,7 +249,6 @@ aw_const struct awbl_devhcf g_awbl_devhcf_list[] = {
     AWBL_HWCONF_GPIO_WDT
 
     AWBL_HWCONF_IMX6UL_WDT1
-    AWBL_HWCONF_IMX6UL_WDT2
     AWBL_HWCONF_IMX6UL_WDT3
 
     AWBL_HWCONF_IMX6UL_SAI1

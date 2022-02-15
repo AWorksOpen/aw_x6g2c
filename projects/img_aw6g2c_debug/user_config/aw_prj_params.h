@@ -60,8 +60,7 @@
 //#define AW_DEV_GPIO_SPI                 /**< \brief GPIO SPI */
 //#define AW_DEV_IMX6UL_QSPI_1            /**< \brief QSPIÇý¶¯ */
 //#define AW_DEV_IMX6UL_WDT1              /**< \brief WDT1 */
-//#define AW_DEV_IMX6UL_WDT2              /**< \brief WDT2 for secure world purposes (couldn't work in normal modes) */
-//#define AW_DEV_IMX6UL_WDT3              /**< \brief WDT3 (do not work) */
+//#define AW_DEV_IMX6UL_WDT3              /**< \brief WDT3 */
 //#define AW_DEV_GPIO_WDT                 /**< \brief GPIO WDT */
 //#define AW_DEV_IMX6UL_SIM1_PORT0        /**< \brief SIM1 PORT0 */
 //#define AW_DEV_IMX6UL_SIM1_PORT1        /**< \brief SIM1 PORT1 */
