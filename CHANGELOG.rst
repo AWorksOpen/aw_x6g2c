@@ -1,5 +1,17 @@
 版本记录
 ========
+.. describe:: 2.0.5 <2023-01-12>
+    
+    * update the DDR3 initialization configuration of uboot_burn_AWorks tools.
+    
+.. describe:: 2.0.4 <2022-12-27>
+    
+    * gpmi support EDO mode.
+
+.. describe:: 2.0.3 <2022-11-8>
+    
+    * adapter littlefs
+    
 .. describe:: 2.0.2 <2022-02-14>
     
     * fixed an external hardware watchdog issue.

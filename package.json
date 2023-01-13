@@ -1,10 +1,10 @@
 {
   "name": "aw_x6g2x_disk", 
-  "version": "2.0.2", 
+  "version": "2.0.5", 
   "description": "aworks imx6ul full disk for x6g2x board", 
   "category": "package", 
-  "build_ref": "41ead9c59941d187d9ed58412fcbfccec9b0593f", 
-  "build_id": "122044", 
+  "build_ref": "b3ba571208c7d2ff4fffaca203102c7833d871b4", 
+  "build_id": "186110", 
   "repository": "http://192.168.23.62/aworks-team/aw_imx6ul", 
   "engines": [
     "axio-engine@1.1.0-a.79", 

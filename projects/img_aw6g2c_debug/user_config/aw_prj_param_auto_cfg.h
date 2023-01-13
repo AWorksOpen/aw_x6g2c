@@ -14,7 +14,7 @@
 
 /**
  * \file
- * \brief AnyWhere ¹¤³Ì²ÎÊı×Ô¶¯ÅäÖÃÎÄ¼ş
+ * \brief AnyWhere å·¥ç¨‹å‚æ•°è‡ªåŠ¨é…ç½®æ–‡ä»¶
  */
 
 #ifndef __AW_PRJ_PARAMS_AUTO_CFG_H
@@ -22,7 +22,7 @@
 
 
 
-/* HW480272FÒº¾§ÆÁÉè±¸ÒÀÀµ frame buffer×é¼şºÍÇı¶¯
+/* HW480272Fæ¶²æ™¶å±è®¾å¤‡ä¾èµ– frame bufferç»„ä»¶å’Œé©±åŠ¨
  * add by CYX at 2019.1.9
  */
 #if defined  AW_DEV_HW480272F || \
@@ -36,7 +36,7 @@
 #endif
 
 /**
- * \name Íâ²¿FM175XX mifare¶Á¿¨Ä£¿é
+ * \name å¤–éƒ¨FM175XX mifareè¯»å¡æ¨¡å—
  * @{
  */
 #ifdef AW_DEV_FM175XX
@@ -49,7 +49,7 @@
 /** @} */
 
 /**
- * \name APL_D01Ä£¿é
+ * \name APL_D01æ¨¡å—
  * @{
  */
 #ifdef AW_DEV_APL_D01
@@ -58,7 +58,7 @@
 /** @} */
 
 /**
- * \name TinyHMIÄ£¿é
+ * \name TinyHMIæ¨¡å—
  * @{
  */
 #ifdef AW_DEV_TINY_HMI
@@ -67,7 +67,7 @@
 /** @} */
 
 /**
- * \name PM1000Ç°Ãæ°å
+ * \name PM1000å‰é¢æ¿
  * @{
  */
 #ifdef AW_DEV_PANEL_PM1000
@@ -76,7 +76,7 @@
 /** @} */
 
 /*
- * \name gpsÉè±¸
+ * \name gpsè®¾å¤‡
  * @{
  */
 #ifdef AW_DEV_GNSS_UBLOX
@@ -95,7 +95,7 @@
 #endif
 
 
-/* SJA1000Çı¶¯ */
+/* SJA1000é©±åŠ¨ */
 #ifdef AW_DEV_SJA1000
 #define AW_DRV_SJA1000
 
@@ -104,7 +104,7 @@
 #endif
 #endif
 
-/* EIMÍâÉèÒÀÀµÓÚEIMÇı¶¯ */
+/* EIMå¤–è®¾ä¾èµ–äºEIMé©±åŠ¨ */
 #ifdef AW_DEV_IMX6UL_EIM
 #define AW_DRV_IMX6UL_EIM
 #ifndef AW_COM_EIMBUS
@@ -113,7 +113,7 @@
 #endif
 
 /**
- * \name »ªÎªME909S
+ * \name åä¸ºME909S
  * @{
  */
 #ifdef AW_DEV_GPRS_ME909S
@@ -145,7 +145,7 @@
 
 
 /**
- * \name ÁúÉĞU9300
+ * \name é¾™å°šU9300
  * @{
  */
 #ifdef AW_DEV_GPRS_U9300C
@@ -154,7 +154,7 @@
 /** @} */
 
 /**
- * \name GPRSÉè±¸
+ * \name GPRSè®¾å¤‡
  * @{
  */
 #if defined(AW_DEV_GPRS_SIM800) || \
@@ -170,11 +170,11 @@
 #if defined(AW_DEV_GPRS_ME909S) || \
     defined(AW_DEV_GPRS_U9300C) || \
     defined(AW_DEV_GPRS_EC20)
-#define AW_DRV_USBH_WIRELESS                   /**< \brief ÒÆ¶¯ÎŞÏßÍøÂçÇı¶¯(anydata¡¢»ªÎª¡¢ÁúÉĞµÈÏµÁĞ3G/4GÄ£¿é) */
+#define AW_DRV_USBH_WIRELESS                   /**< \brief ç§»åŠ¨æ— çº¿ç½‘ç»œé©±åŠ¨(anydataã€åä¸ºã€é¾™å°šç­‰ç³»åˆ—3G/4Gæ¨¡å—) */
 #endif
 /** @} */
 
-/* OV7725Éè±¸ÒÀÀµCSIÇı¶¯ */
+/* OV7725è®¾å¤‡ä¾èµ–CSIé©±åŠ¨ */
 #ifdef AW_DEV_OV7725
 #define AW_DRV_OV7725
 #ifndef AW_DEV_CAMERA
@@ -185,7 +185,7 @@
 #endif
 #endif
 
-/* GC0308Éè±¸ÒÀÀµCSIÇı¶¯ */
+/* GC0308è®¾å¤‡ä¾èµ–CSIé©±åŠ¨ */
 #ifdef AW_DEV_GC0308
 #define AW_DRV_GC0308
 #ifndef AW_DEV_CAMERA
@@ -196,7 +196,7 @@
 #endif
 #endif
 
-/* ADV7280Éè±¸ÒÀÀµCSIÇı¶¯ */
+/* ADV7280è®¾å¤‡ä¾èµ–CSIé©±åŠ¨ */
 #ifdef AW_DEV_ADV7280
 #define AW_DRV_ADV7280
 #ifndef AW_DEV_CAMERA
@@ -208,12 +208,12 @@
 #endif
 
 
-/* CSI¿ØÖÆÆ÷Éè±¸ÒÀÀµCSIÇı¶¯ */
+/* CSIæ§åˆ¶å™¨è®¾å¤‡ä¾èµ–CSIé©±åŠ¨ */
 #ifdef AW_DEV_IMX6UL_CSI
 #define AW_DRV_IMX6UL_CSI
 #endif
 
-/* name ¶ÀÁ¢°´¼ü */
+/* name ç‹¬ç«‹æŒ‰é”® */
 #ifdef AW_DEV_GPIO_KEY
 #define AW_DRV_GPIO_KEY
 #ifndef AW_COM_EVENT
@@ -227,7 +227,7 @@
 #endif
 #endif
 
-/* PCF85063ÊµÊ±Ê±ÖÓÉè±¸ÒÀÀµRTC×é¼şºÍGPIO I2CÉè±¸ */
+/* PCF85063å®æ—¶æ—¶é’Ÿè®¾å¤‡ä¾èµ–RTCç»„ä»¶å’ŒGPIO I2Cè®¾å¤‡ */
 #ifdef AW_DEV_EXTEND_PCF85063_0
 #define AW_DRV_EXTEND_PCF85063_0
 #ifndef AW_DEV_GPIO_I2C_0
@@ -236,7 +236,7 @@
 #define AW_COM_RTC
 #endif
 
-/* I2CÍâÉèÒÀÀµÓÚI2C×é¼şºÍI2CÇı¶¯ */
+/* I2Cå¤–è®¾ä¾èµ–äºI2Cç»„ä»¶å’ŒI2Cé©±åŠ¨ */
 #if defined(AW_DEV_IMX6UL_I2C_1) ||\
     defined(AW_DEV_IMX6UL_I2C_2) ||\
     defined(AW_DEV_IMX6UL_I2C_3) ||\
@@ -248,7 +248,7 @@
 #endif
 #endif
 
-/* GPIO I2CÒÀÀµÓÚI2C×é¼şºÍGPIO I2CÇı¶¯ */
+/* GPIO I2Cä¾èµ–äºI2Cç»„ä»¶å’ŒGPIO I2Cé©±åŠ¨ */
 #ifdef AW_DEV_GPIO_I2C_0
 #define AW_DRV_GPIO_I2C
 #ifndef AW_COM_I2CBUS
@@ -256,12 +256,12 @@
 #endif
 #endif
 
-/* OCOTPÍâÉèÒÀÀµÓÚOCOTPÇı¶¯ */
+/* OCOTPå¤–è®¾ä¾èµ–äºOCOTPé©±åŠ¨ */
 #ifdef AW_DEV_IMX6UL_OCOTP
 #define AW_DRV_IMX6UL_OCOTP
 #endif
 
-/* ¿ØÖÆÌ¨×é¼şÒÀÀµ UARTx */
+/* æ§åˆ¶å°ç»„ä»¶ä¾èµ– UARTx */
 #ifdef AW_COM_CONSOLE
 #if AW_CFG_CONSOLE_COMID == COM0
 #ifndef AW_DEV_IMX6UL_UART1
@@ -270,21 +270,21 @@
 #endif
 #endif
 
-/* shellÒÀÀµÓÚ´®¿Ú1Éè±¸ */
+/* shellä¾èµ–äºä¸²å£1è®¾å¤‡ */
 #ifdef AW_COM_SHELL_SERIAL
 #ifndef AW_DEV_IMX6UL_UART1
 #define AW_DEV_IMX6UL_UART1
 #endif
 #endif
 
-/* ZIGBEEÉè±¸ÒÀÀµZIGBEEÇı¶¯ºÍZIGBEE×é¼ş */
+/* ZIGBEEè®¾å¤‡ä¾èµ–ZIGBEEé©±åŠ¨å’ŒZIGBEEç»„ä»¶ */
 #ifdef AW_DEV_ZIGBEE
 #define AW_DEV_IMX6UL_UART2
 #define AW_COM_ZIGBEE
 #define AW_DRV_ZIGBEE
 #endif
 
-/* UARTÍâÉèÒÀÀµÓÚSERIAL×é¼şºÍUARTÇı¶¯*/
+/* UARTå¤–è®¾ä¾èµ–äºSERIALç»„ä»¶å’ŒUARTé©±åŠ¨*/
 #if defined (AW_DEV_IMX6UL_UART1) ||\
     defined (AW_DEV_IMX6UL_UART2) ||\
     defined (AW_DEV_IMX6UL_UART3) ||\
@@ -300,22 +300,22 @@
 #endif
 #endif
 
-/* APBHDMAÒÀÀµÓÚAPBHDMAÇı¶¯ */
+/* APBHDMAä¾èµ–äºAPBHDMAé©±åŠ¨ */
 #ifdef AW_DEV_IMX6UL_APBHDMA
 #define AW_DRV_IMX6UL_APBHDMA
 #endif
 
-/* SDMAÒÀÀµÓÚSDMAÇı¶¯ */
+/* SDMAä¾èµ–äºSDMAé©±åŠ¨ */
 #ifdef AW_DEV_IMX6UL_SDMA
 #define AW_DRV_IMX6UL_SDMA
 #endif
 
-/* SAI1ÒÀÀµÓÚSAIÇı¶¯ */
+/* SAI1ä¾èµ–äºSAIé©±åŠ¨ */
 #ifdef AW_DEV_IMX6UL_SAI1
 #define AW_DRV_IMX6UL_SAI
 #endif
 
-/* MQSÒÀÀµÓÚMQSÇı¶¯ */
+/* MQSä¾èµ–äºMQSé©±åŠ¨ */
 #ifdef AW_DEV_IMX6UL_MQS
 #if !defined (AW_DEV_IMX6UL_SAI1)
 #error "AW_DEV_IMX6UL_MQS relay on sai1"
@@ -323,7 +323,7 @@
 #define AW_DRV_IMX6UL_MQS
 #endif
 
-/* GPTIMERÒÀÀµÓÚGPTIMERÇı¶¯ */
+/* GPTIMERä¾èµ–äºGPTIMERé©±åŠ¨ */
 #if defined (AW_DEV_IMX6UL_GPTIMER_1) ||\
     defined (AW_DEV_IMX6UL_GPTIMER_2)
 
@@ -334,25 +334,25 @@
 #define AW_DRV_IMX6UL_TIMESTAMP
 #endif
 
-/* DC_BUZZER ÒÀÀµ DC_BUZZERÇı¶¯ */
+/* DC_BUZZER ä¾èµ– DC_BUZZERé©±åŠ¨ */
 #ifdef AW_DEV_DC_BUZZER
 #define AW_DRV_DC_BUZZER
 #endif
 
-/* PWM_BUZZER ÒÀÀµ PWMÇı¶¯ */
+/* PWM_BUZZER ä¾èµ– PWMé©±åŠ¨ */
 #ifdef AW_DEV_PWM_BUZZER
 #define AW_DRV_PWM_BUZZER
 #define AW_DEV_IMX6UL_PWM             /**< \brief IMX6UL PWM */
 #endif
 
-/* PWMÍâÉèÒÀÀµÓÚPWM×é¼şºÍPWMÇı¶¯ */
+/* PWMå¤–è®¾ä¾èµ–äºPWMç»„ä»¶å’ŒPWMé©±åŠ¨ */
 #ifdef AW_DEV_IMX6UL_PWM
 #define AW_DRV_IMX6UL_PWM
 #define AW_COM_PWM
 #endif
 
 
-/* EP24CXXÒÀÀµÓÚEEPROMÍ¨ÓÃÇı¶¯¡¢I2C×ÜÏß×é¼ş */
+/* EP24CXXä¾èµ–äºEEPROMé€šç”¨é©±åŠ¨ã€I2Cæ€»çº¿ç»„ä»¶ */
 #ifdef AW_DEV_EXTEND_EP24CXX_0
 #define AW_DRV_EXTEND_EP24CXX
 #ifndef AW_COM_I2CBUS
@@ -360,13 +360,13 @@
 #endif
 #endif
 
-/* CAAMÒÀÀµÓÚCAAMÇı¶¯ */
+/* CAAMä¾èµ–äºCAAMé©±åŠ¨ */
 #ifdef AW_DEV_IMX6UL_CAAM
 #define AW_DRV_IMX6UL_CAAM
 #endif
 
 
-/* GPIO WDTÒÀÀµÓÚGPIO WDTÇı¶¯ºÍWDT×é¼ş */
+/* GPIO WDTä¾èµ–äºGPIO WDTé©±åŠ¨å’ŒWDTç»„ä»¶ */
 #ifdef AW_DEV_GPIO_WDT
 #define AW_DRV_GPIO_WDT
 #ifndef AW_COM_WDT
@@ -375,7 +375,7 @@
 #endif
 
 
-/* WDTÍâÉèÒÀÀµÓÚWDTÇı¶¯ºÍWDT×é¼ş */
+/* WDTå¤–è®¾ä¾èµ–äºWDTé©±åŠ¨å’ŒWDTç»„ä»¶ */
 #if defined(AW_DEV_IMX6UL_WDT1) || \
     defined(AW_DEV_IMX6UL_WDT2) || \
     defined(AW_DEV_IMX6UL_WDT3)
@@ -385,7 +385,7 @@
 #endif
 #endif
 
-/* ´¥ÃşÆÁÉè±¸ÒÀÀµ´¥ÃşÆÁÇı¶¯ºÍADCÉè±¸ */
+/* è§¦æ‘¸å±è®¾å¤‡ä¾èµ–è§¦æ‘¸å±é©±åŠ¨å’ŒADCè®¾å¤‡ */
 #ifdef AW_DEV_IMX6UL_TS
 #define AW_DRV_IMX6UL_TS
 #ifndef AW_DEV_IMX6UL_ADC1
@@ -395,7 +395,7 @@
 #endif
 
 /**
- * \name Íâ²¿µçÈİ´¥ÃşÆÁ(I2C½Ó¿Ú)
+ * \name å¤–éƒ¨ç”µå®¹è§¦æ‘¸å±(I2Cæ¥å£)
  * \brief add by CYX
  * @{
  */
@@ -406,13 +406,13 @@
 /** @} */
 
 
-/* ADCÍâÉèÒÀÀµÓÚADCÇı¶¯ */
+/* ADCå¤–è®¾ä¾èµ–äºADCé©±åŠ¨ */
 #ifdef AW_DEV_IMX6UL_ADC1
 #define AW_DRV_IMX6UL_ADC
 #define AW_COM_ADC
 #endif
 
-/* ECSPIÍâÉèÒÀÀµÓÚECSPIÇı¶¯ºÍSPIBUS×é¼ş */
+/* ECSPIå¤–è®¾ä¾èµ–äºECSPIé©±åŠ¨å’ŒSPIBUSç»„ä»¶ */
 #if defined (AW_DEV_IMX6UL_ECSPI_1) || \
     defined (AW_DEV_IMX6UL_ECSPI_2) || \
     defined (AW_DEV_IMX6UL_ECSPI_3) || \
@@ -423,7 +423,7 @@
 #endif
 #endif
 
-/* GPIO SPIÍâÉèÒÀÀµÓÚGPIO SPIÇı¶¯ºÍSPIBUS×é¼ş */
+/* GPIO SPIå¤–è®¾ä¾èµ–äºGPIO SPIé©±åŠ¨å’ŒSPIBUSç»„ä»¶ */
 #ifdef AW_DEV_GPIO_SPI
 #define AW_DRV_GPIO_SPI
 #ifndef AW_COM_SPIBUS
@@ -431,7 +431,7 @@
 #endif
 #endif
 
-/* QSPIÍâÉèÒÀÀµÓÚQSPIÇı¶¯ºÍSPIBUS×é¼ş */
+/* QSPIå¤–è®¾ä¾èµ–äºQSPIé©±åŠ¨å’ŒSPIBUSç»„ä»¶ */
 #if defined(AW_DEV_IMX6UL_QSPI_1)
 #define AW_DRV_IMX6UL_QSPI
 #ifndef AW_COM_SPIBUS
@@ -440,7 +440,7 @@
 #endif
 
 
-/* ÎÂ¶ÈÉè±¸ÒÀÀµÎÂ¶ÈÉèÖÃ×é¼şºÍÇı¶¯ */
+/* æ¸©åº¦è®¾å¤‡ä¾èµ–æ¸©åº¦è®¾ç½®ç»„ä»¶å’Œé©±åŠ¨ */
 #ifdef AW_DEV_IMX6UL_TEMPMON
 #define AW_COM_TEMPMON
 #define AW_DRV_IMX6UL_TEMPMON
@@ -449,16 +449,16 @@
 /* ENET */
 #if defined( AW_DEV_IMX6UL_ENET0) || defined(AW_DEV_IMX6UL_ENET1)
 #define AW_DRV_IMX6UL_ENET
-#ifndef AW_COM_NETWORK          /* Ê¹ÄÜÍøÂçĞ­ÒéÕ» */
+#ifndef AW_COM_NETWORK          /* ä½¿èƒ½ç½‘ç»œåè®®æ ˆ */
 #define AW_COM_NETWORK
 #endif
-//#define AW_DEV_GENERIC_PHY0   /* Í¨ÓÃ PHY Éè±¸0 */
-//#define AW_DEV_GENERIC_PHY1   /* Í¨ÓÃ PHY Éè±¸1 */
+//#define AW_DEV_GENERIC_PHY0   /* é€šç”¨ PHY è®¾å¤‡0 */
+//#define AW_DEV_GENERIC_PHY1   /* é€šç”¨ PHY è®¾å¤‡1 */
 #ifdef AW_DEV_IMX6UL_ENET0
-#define AW_DEV_DP83848_PHY0     /* DP83848 PHY Éè±¸0 */
+#define AW_DEV_DP83848_PHY0     /* DP83848 PHY è®¾å¤‡0 */
 #endif
 #ifdef AW_DEV_IMX6UL_ENET1
-#define AW_DEV_DP83848_PHY1     /* DP83848 PHY Éè±¸0 */
+#define AW_DEV_DP83848_PHY1     /* DP83848 PHY è®¾å¤‡0 */
 #endif
 #endif
 
@@ -474,13 +474,13 @@
 #define AW_COM_MIIBUS
 #endif
 
-/* GPIO LEDÒÀÀµGPIO×é¼şGPIO LEDÍ¨ÓÃÇı¶¯ */
+/* GPIO LEDä¾èµ–GPIOç»„ä»¶GPIO LEDé€šç”¨é©±åŠ¨ */
 #ifdef AW_DEV_GPIO_LED
 #define AW_COM_LED
 #define AW_DRV_GPIO_LED
 #endif
 
-/* SIMÍâÉèÒÀÀµSIMÇı¶¯ºÍSIM×é¼ş */
+/* SIMå¤–è®¾ä¾èµ–SIMé©±åŠ¨å’ŒSIMç»„ä»¶ */
 #if defined(AW_DEV_IMX6UL_SIM1_PORT0) || \
     defined(AW_DEV_IMX6UL_SIM1_PORT1) || \
     defined(AW_DEV_IMX6UL_SIM2_PORT0) || \
@@ -490,7 +490,7 @@
 #endif
 
 #if 0
-/* HW480272FÒº¾§ÆÁÉè±¸ÒÀÀµ frame buffer×é¼şºÍÇı¶¯ */
+/* HW480272Fæ¶²æ™¶å±è®¾å¤‡ä¾èµ– frame bufferç»„ä»¶å’Œé©±åŠ¨ */
 #ifdef AW_DEV_HW480272F
 #define AW_DRV_MXS_HW480272F
 #define AW_DRV_FB
@@ -499,7 +499,7 @@
 #endif
 
 
-/* SDCARDÍâÉèÒÀÀµSDCARDÇı¶¯ ºÍ¿éÉè±¸¿ò¼Ü , SDIOÉè±¸*/
+/* SDCARDå¤–è®¾ä¾èµ–SDCARDé©±åŠ¨ å’Œå—è®¾å¤‡æ¡†æ¶ , SDIOè®¾å¤‡*/
 #ifdef AW_DEV_SDCARD
 #define AW_DRV_SDCARD
 #ifndef AW_DEV_IMX6UL_USDHC1
@@ -511,7 +511,7 @@
 #endif
 
 /**
- * \name SDIOÍâÉè
+ * \name SDIOå¤–è®¾
  * @{
  */
 #if defined(AW_DEV_IMX6UL_USDHC1) ||\
@@ -524,7 +524,7 @@
 #endif
 /** @} */
 
-/* SPI_FLASHÒÀÀµnvram×é¼şºÍSPI FLASHÇı¶¯ */
+/* SPI_FLASHä¾èµ–nvramç»„ä»¶å’ŒSPI FLASHé©±åŠ¨ */
 #if defined(AW_DEV_SPI_FLASH0) ||\
     defined(AW_DEV_SPI_FLASH1)
 #define AW_DRV_SPI_FLASH
@@ -533,26 +533,26 @@
 #define AW_CFG_SPI_FLASH_NVRAM
 #endif
 
-/* MTD¹¦ÄÜÒÀÀµMTD×é¼ş */
+/* MTDåŠŸèƒ½ä¾èµ–MTDç»„ä»¶ */
 #ifdef AW_CFG_SPI_FLASH_MTD
 #ifndef AW_COM_MTD_DEV
 #define AW_COM_MTD_DEV
 #endif
 #endif
 
-/* CANÍâÉèÒÀÀµÓÚCANÇı¶¯ */
+/* CANå¤–è®¾ä¾èµ–äºCANé©±åŠ¨ */
 #if defined(AW_DEV_IMX6UL_CAN1) || defined(AW_DEV_IMX6UL_CAN2)
 #define AW_DRV_IMX6UL_CAN
 #endif
 
-/* CANopen±ØĞëÒÀÀµCANÇı¶¯ */
+/* CANopenå¿…é¡»ä¾èµ–CANé©±åŠ¨ */
 #ifdef AW_COM_CANOPEN
 #ifndef AW_DRV_IMX6UL_CAN
 #error "AW_COM_CANOPEN can not work without AW_DRV_IMX6UL_CAN"
 #endif
 #endif
 
-/* USB Host ÒÀÀµÓÚUSB hostÇı¶¯ */
+/* USB Host ä¾èµ–äºUSB hosté©±åŠ¨ */
 #if defined(AW_DEV_IMX6UL_USB_HOST1) ||\
     defined(AW_DEV_IMX6UL_USB_HOST2)
 #define AW_DRV_IMX6UL_USB_HOST
@@ -561,7 +561,7 @@
 #endif
 #endif
 
-/* USB Device ÒÀÀµÓÚUSB DeviceÇı¶¯ */
+/* USB Device ä¾èµ–äºUSB Deviceé©±åŠ¨ */
 #ifdef AW_DEV_IMX6UL_USB_DEVICE0
 #define AW_DRV_IMX6UL_USB_DEVICE
 #ifndef AW_COM_USBD
@@ -572,17 +572,17 @@
 #endif
 #endif
 
-/* ZLG600A I2CÉè±¸ÀµÓÚUSZLG600A I2CÇı¶¯ */
+/* ZLG600A I2Cè®¾å¤‡èµ–äºUSZLG600A I2Cé©±åŠ¨ */
 #ifdef AW_DEV_ZLG600A_I2C_0
 #define AW_DRV_ZLG600A_I2C
 #endif
 
-/* ZLG600A UARTÉè±¸ÀµÓÚUSZLG600A UARTÇı¶¯ */
+/* ZLG600A UARTè®¾å¤‡èµ–äºUSZLG600A UARTé©±åŠ¨ */
 #ifdef AW_DEV_ZLG600A_UART_0
 #define AW_DRV_ZLG600A_UART
 #endif
 
-/* NAND FLASHÉè±¸ÀµÓÚNAND BUSºÍNANDÇı¶¯ */
+/* NAND FLASHè®¾å¤‡èµ–äºNAND BUSå’ŒNANDé©±åŠ¨ */
 #if defined(AW_DEV_NAND_FLASH_S34ML01G2) ||\
     defined(AW_DEV_NAND_FLASH_S34ML02G2)
 #define AW_DRV_NANDBUS
@@ -593,7 +593,7 @@
 #endif
 #endif
 
-/* GPMIÍâÉèÒÀÀµÓÚGPMIÇı¶¯ */
+/* GPMIå¤–è®¾ä¾èµ–äºGPMIé©±åŠ¨ */
 #ifdef AW_DEV_IMX6UL_GPMI
 #define AW_DRV_IMX6UL_GPMI
 #endif
@@ -607,7 +607,7 @@
 #endif
 /** @} */
 
-/* 16550 PLB ¼æÈİÇı¶¯ÒÀÀµÓÚ´®ĞĞ¶Ë¿ÚÍ¨ÓÃ¿â */
+/* 16550 PLB å…¼å®¹é©±åŠ¨ä¾èµ–äºä¸²è¡Œç«¯å£é€šç”¨åº“ */
 #ifdef AW_DRV_NS16550_PLB
 #ifndef AW_COM_SERIAL
 #define AW_COM_SERIAL
@@ -618,7 +618,7 @@
 /******************************************************************************/
 
 /**
- * \name ÎÄ¼şÏµÍ³ÒÀÀµÓëIO×ÓÏµÍ³
+ * \name æ–‡ä»¶ç³»ç»Ÿä¾èµ–ä¸IOå­ç³»ç»Ÿ
  * @{
  */
 #if defined AW_COM_FS_RAWFS  || \
@@ -628,7 +628,8 @@
     defined AW_COM_FS_DUMPFS || \
     defined AW_COM_FS_SAFEFS || \
     defined AW_COM_FS_YAFFS  || \
-    defined AW_COM_FS_ROMFS
+    defined AW_COM_FS_ROMFS  || \
+    defined AW_COM_FS_LITTLEFS
 
 #ifndef AW_COM_IO_SYSTEM
 #define AW_COM_IO_SYSTEM
@@ -645,7 +646,7 @@
 /** @} */
 
 /**
- * \name ²¿·ÖÎÄ¼şÏµÍ³ÒÀÀµ¿éÉè±¸
+ * \name éƒ¨åˆ†æ–‡ä»¶ç³»ç»Ÿä¾èµ–å—è®¾å¤‡
  * @{
  */
 #if defined AW_COM_FS_RAWFS  || \
@@ -660,11 +661,12 @@
 /** @} */
 
 /**
- * \name ²¿·ÖÎÄ¼şÏµÍ³ÒÀÀµmtdÉè±¸
+ * \name éƒ¨åˆ†æ–‡ä»¶ç³»ç»Ÿä¾èµ–mtdè®¾å¤‡
  * @{
  */
 #if defined AW_COM_FS_LFFS || \
-    defined AW_COM_FS_SAFEFS
+    defined AW_COM_FS_SAFEFS || \
+    defined AW_COM_FS_LITTLEFS
 
 #ifndef AW_COM_MTD_DEV
 #define AW_COM_MTD_DEV
@@ -673,7 +675,7 @@
 /** @} */
 
 /**
- * \name ²¿·ÖÎÄ¼şÏµÍ³ÒÀÀµÊÂ¼ş
+ * \name éƒ¨åˆ†æ–‡ä»¶ç³»ç»Ÿä¾èµ–äº‹ä»¶
  * @{
  */
 #if defined AW_COM_FS_FATFS
@@ -712,7 +714,7 @@
 
 
 /*******************************************************************************
-  ³åÍ»¼ì²â
+  å†²çªæ£€æµ‹
 *******************************************************************************/
 /** \cond */
 
@@ -739,12 +741,12 @@
 #error "AW_DEV_ZLG600A_UART_0 and AW_DEV_ZLG600A_I2C_0 cannot defined at the same time!"
 #endif
 
-/* ÓëOV7725³åÍ»µÄÅäÖÃ */
+/* ä¸OV7725å†²çªçš„é…ç½® */
 #if (defined(AW_DEV_OV7725) || defined(AW_DEV_ADV7280) || defined(AW_DEV_GC0308)) && defined(AW_DEV_ZIGBEE)
 #error "AW_DEV_OV7725 or AW_DEV_ADV7280 or AW_DEV_GC0308 configuration conflict!"
 #endif
 
-/* ÓëCSI¿ØÖÆÆ÷³åÍ»µÄÅäÖÃ */
+/* ä¸CSIæ§åˆ¶å™¨å†²çªçš„é…ç½® */
 #if defined(AW_DEV_IMX6UL_CSI) && (defined(AW_DEV_IMX6UL_UART6) || defined(AW_DEV_GPIO_SPI) || defined(AW_DEV_IMX6UL_EIM) \
     || defined(AW_DEV_IMX6UL_ECSPI_1) || defined(AW_DEV_SPI_FLASH1) || defined(AW_DEV_ZIGBEE) || defined(AW_DEV_IMX6UL_SIM1_PORT1) \
     || defined(AW_DEV_IMX6UL_SIM2_PORT1))
@@ -757,13 +759,13 @@
 #error "Two of the AW_DEV_IMX6UL_UART2, AW_DEV_IMX6UL_ECSPI_3 and AW_DEV_IMX6UL_CAN2 cannot defined at the same time!"
 #endif
 
-/* ÓëEIM¿ØÖÆÆ÷³åÍ»µÄÅäÖÃ */
+/* ä¸EIMæ§åˆ¶å™¨å†²çªçš„é…ç½® */
 #if defined(AW_DEV_IMX6UL_EIM) && ((defined(AW_DEV_IMX6UL_UART6) || defined(AW_DEV_IMX6UL_ECSPI_1) \
     || defined(AW_DEV_IMX6UL_SIM1_PORT1) || defined(AW_DEV_IMX6UL_CSI) ))
 #error "AW_DEV_IMX6UL_EIM  configuration conflict!"
 #endif
 
-/* ÍøÂç¹¤¾ß±ØĞëÒÀÀµÍøÂç×é¼ş */
+/* ç½‘ç»œå·¥å…·å¿…é¡»ä¾èµ–ç½‘ç»œç»„ä»¶ */
 #ifndef AW_COM_NETWORK
 #ifdef AW_NET_TOOLS
 #warning "AW_NET_TOOLS can not work without AW_COM_NETWORK"
