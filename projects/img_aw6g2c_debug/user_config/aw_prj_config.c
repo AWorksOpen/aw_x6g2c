@@ -97,6 +97,10 @@
 #include "fs/aw_romfs_cfg.c"
 #endif  /* AW_COM_FS_ROMFS */
 
+#ifdef AW_COM_FS_LITTLEFS
+#include "fs/aw_littlefs_cfg.c"
+#endif  /* AW_COM_FS_LFFS */
+
 #ifdef AW_COM_SHELL_SERIAL
 #include "aw_shell_serial_cfg.c"
 #endif  /* AW_COM_SHELL_SERIAL */
@@ -625,6 +629,10 @@ void aw_prj_task_level_init( void )
 #ifdef AW_COM_FS_ROMFS
     aw_romfs_lib_init();
 #endif  /* AW_COM_FS_ROMFS */
+
+#ifdef AW_COM_FS_LITTLEFS
+    aw_littlefs_lib_init();
+#endif  /* AW_COM_FS_LFFS */
 
 #ifdef AW_COM_MOUNT
     aw_mount_lib_init();

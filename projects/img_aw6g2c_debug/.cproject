@@ -65,6 +65,8 @@
 								</option>
 								<option id="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.include.paths.1629797328" name="Include paths (-I)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/include/config&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/3rdparty/fs/littlefs-master&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/components/fs/littlefs_adapter/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/3rdparty/Unity/aworks_adapter&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/3rdparty&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/source/cpu/imx6ul/include&quot;"/>
@@ -131,6 +133,8 @@
 							<tool command="${cross_prefix}${cross_c}${cross_suffix}" commandLinePattern="${COMMAND} ${cross_toolchain_flags} ${FLAGS} -c ${OUTPUT_FLAG} ${OUTPUT_PREFIX}${OUTPUT} ${INPUTS}" errorParsers="org.eclipse.cdt.core.GLDErrorParser;org.eclipse.cdt.core.GCCErrorParser" id="ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.1901997911" name="Cross ARM C Compiler" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler">
 								<option id="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.include.paths.1526368227" name="Include paths (-I)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/include/config&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/3rdparty/fs/littlefs-master&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/components/fs/littlefs_adapter/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/3rdparty/can_stack/CANopen&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/3rdparty&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/components/usb/usb_v2/config&quot;"/>
@@ -233,6 +237,8 @@
 								</option>
 								<option id="ilg.gnuarmeclipse.managedbuild.cross.option.cpp.compiler.include.paths.444273876" name="Include paths (-I)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.cpp.compiler.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/include/config&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/components/fs/littlefs_adapter/include&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/3rdparty/fs/littlefs-master&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/3rdparty&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/3rdparty/Unity/aworks_adapter&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/source/cpu/imx6ul/include&quot;"/>
@@ -361,6 +367,8 @@
 								</option>
 								<option id="ilg.gnuarmeclipse.managedbuild.cross.option.cpp.linker.libs.694353115" name="Libraries (-l)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.cpp.linker.libs" useByScannerDiscovery="false" valueType="libs">
 									<listOptionValue builtIn="false" value="aw_canopen_mst"/>
+									<listOptionValue builtIn="false" value="aw_littlefs"/>
+									<listOptionValue builtIn="false" value="aw_littlefs_adapter"/>
 									<listOptionValue builtIn="false" value="aw_psp"/>
 									<listOptionValue builtIn="false" value="rtk"/>
 									<listOptionValue builtIn="false" value="reqsched"/>
@@ -495,6 +503,8 @@
 								</option>
 								<option id="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.include.paths.963103638" name="Include paths (-I)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/include/config&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/3rdparty/fs/littlefs-master&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/components/fs/littlefs_adapter/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/3rdparty/can_stack/CANopen&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/3rdparty&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/components/usb/usb_v2/config&quot;"/>
@@ -572,6 +582,8 @@
 							<tool command="${cross_prefix}${cross_c}${cross_suffix}" commandLinePattern="${COMMAND} ${cross_toolchain_flags} ${FLAGS} -c ${OUTPUT_FLAG} ${OUTPUT_PREFIX}${OUTPUT} ${INPUTS}" errorParsers="org.eclipse.cdt.core.GLDErrorParser;org.eclipse.cdt.core.GCCErrorParser" id="ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.955233982" name="Cross ARM C Compiler" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler">
 								<option id="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.include.paths.450879775" name="Include paths (-I)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/include/config&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/3rdparty/fs/littlefs-master&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/components/fs/littlefs_adapter/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/3rdparty/can_stack/CANopen&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/3rdparty&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/components/usb/usb_v2/config&quot;"/>
@@ -673,13 +685,14 @@
 								</option>
 								<option id="ilg.gnuarmeclipse.managedbuild.cross.option.cpp.compiler.include.paths.1734659007" name="Include paths (-I)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.cpp.compiler.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/include/config&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/3rdparty/fs/littlefs-master&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/3rdparty/can_stack/CANopen&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/3rdparty&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/components/usb/usb_v2/config&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/components/usb/usb_v2/adapter/external/shell&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/components/usb/usb_v2/adapter/external/config&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/components/usb/usb_v2/adapter/external/include&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/components/usb/usb_v2/include&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/components/fs/littlefs_adapter/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/components/net/tools/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/components/usb/usb_v2/utils&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${AW_ROOT}/apollo/components/usb/usb_v2/common&quot;"/>
@@ -811,6 +824,8 @@
 								</option>
 								<option id="ilg.gnuarmeclipse.managedbuild.cross.option.cpp.linker.libs.333994415" name="Libraries (-l)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.cpp.linker.libs" useByScannerDiscovery="false" valueType="libs">
 									<listOptionValue builtIn="false" value="aw_canopen_mst"/>
+									<listOptionValue builtIn="false" value="aw_littlefs"/>
+									<listOptionValue builtIn="false" value="aw_littlefs_adapter"/>
 									<listOptionValue builtIn="false" value="aw_psp"/>
 									<listOptionValue builtIn="false" value="rtk"/>
 									<listOptionValue builtIn="false" value="reqsched"/>

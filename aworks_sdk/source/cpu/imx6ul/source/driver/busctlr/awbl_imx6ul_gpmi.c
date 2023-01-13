@@ -150,33 +150,46 @@ aw_local aw_err_t __imx6ul_gpmi_set_timing (
     __IMX6UL_GPMI_DEVINFO_DECL(p_info, &(p_dev->nandbus.awbus.super));
     struct __imx6ul_gpmi_regs   *p_gpmi_regs = p_dev->p_gpmi_regs;
 
-    uint8_t     tcs,tds,tdh;
-    uint32_t    clk_rate;
-    uint32_t    value;
-
-    /* configure timing parameter。 */
-    clk_rate = aw_clk_rate_get( p_info->clk_io);
-
-    /*
-     * tcs 与  tas ，在 IMX6ul 中， Tcs = (Tas + Tds) + 1, Tals = (Tas + Tds)
-     * 设置参数时，直接使用  Tcs 作为 Tas 的值即可
-     */
-    tcs = ((uint64_t)clk_rate * (p_tim->tcs) ) / 1000000000 + 1;
-
-    /* Data Setup */
-    tds = ((uint64_t)clk_rate * (p_tim->tds) ) / 1000000000 + 1;
-
-    /* Data Hold */
-    tdh = ((uint64_t)clk_rate * (p_tim->tdh) ) / 1000000000 + 1;
-
-    value = ((uint32_t)tcs << 16) |
-                ((uint32_t)tds << 8) |
-                ((uint32_t)tdh << 0);
-    writel(value,&p_gpmi_regs->timing0.value);
-
-    /* configure timeout for ready/busy signal. */
+    uint8_t  tals, tds, tdh;
+    uint32_t clk_rate, value, period;
+    uint32_t dll_en, half_en;
+    uint32_t tas_cycles, tds_cycles, tdh_cycles;
+    uint64_t t64;
+    clk_rate = aw_clk_rate_get(p_info->clk_io);
+    /* gpmi timing0寄存器的tds、tdh同时作用于读写过程，因此在此处取较宽松的参数 */
+    tds  = max(p_tim->tds, p_tim->trp);
+    tdh  = max(p_tim->tdh, p_tim->trc - p_tim->trp);
+    tals = p_tim->tals;
+    t64        = (uint64_t)tds * clk_rate;
+    tds_cycles = (uint32_t)((t64 + 1000000000 - 1) / 1000000000);
+    t64        = (uint64_t)tdh * clk_rate;
+    tdh_cycles = (uint32_t)((t64 + 1000000000 - 1) / 1000000000);
+    t64        = (uint64_t)tals * clk_rate;
+    tas_cycles = (uint32_t)((t64 + 1000000000 - 1) / 1000000000);
+    value      = (tds_cycles << 0) | (tdh_cycles << 8) | (tas_cycles << 16);
+    writel(value, &p_gpmi_regs->timing0.value);
     value = 0x9000u << 16;
-    writel(value,&p_gpmi_regs->timing1.value);
+    writel(value, &p_gpmi_regs->timing1.value);
+    /* 如果条件满足，则配置为EDO模式 */
+    value = (0x0F << 12) | (0x01 << 16) | (0x01 << 17);
+    writel(value, &p_gpmi_regs->ctrl1.value_clr);
+    if ((p_tim->trea + 4) >= tds) {
+        period = 1000000000 / clk_rate;
+        if (period > 12) {
+            dll_en  = 0;
+            half_en = 0;
+        } else if ((period > 6) && (period <= 12)) {
+            dll_en  = 1;
+            half_en = 1;
+        } else {
+            dll_en  = 1;
+            half_en = 0;
+        }
+        value = p_tim->trea + 4 - tds;
+        value = (uint64_t)value * clk_rate * (half_en ? 2 : 1) / 125000000;
+        value = ((value & 0x0F) << 12) | (half_en << 16) | (dll_en << 17);
+        writel(value, &p_gpmi_regs->ctrl1.value_set);
+    }
     return AW_OK;
 }
 
